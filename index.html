@@ -1,0 +1,2062 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BCCS 研發專案配置與人員能力儀表板</title>
+<style>
+  :root {
+    --c-teal:   hsl(178, 42%, 34%);
+    --c-blue:   hsl(215, 42%, 44%);
+    --c-violet: hsl(262, 32%, 50%);
+    --c-amber:  hsl(35, 52%, 44%);
+    --c-red:    hsl(8, 48%, 46%);
+    --c-teal-bg:   hsl(178, 42%, 95%);
+    --c-blue-bg:   hsl(215, 42%, 95%);
+    --c-violet-bg: hsl(262, 32%, 95%);
+    --c-amber-bg:  hsl(35, 52%, 94%);
+    --c-red-bg:    hsl(8, 48%, 95%);
+    --ink: #2b3036;
+    --ink-2: #5a626b;
+    --ink-3: #8a929b;
+    --line: #e3e6ea;
+    --bg: #f6f7f8;
+    --card: #ffffff;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: "PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
+    background: var(--bg); color: var(--ink);
+    font-size: 14px; line-height: 1.7;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 24px 80px; }
+
+  header.page { border-bottom: 3px solid var(--c-teal); padding-bottom: 14px; }
+  header.page h1 { font-size: 22px; font-weight: 700; letter-spacing: 1px; }
+  header.page .sub { color: var(--ink-2); margin-top: 6px; font-size: 12.5px; }
+  header.page .sub span { margin-right: 16px; display: inline-block; }
+
+  nav.tabs { display: flex; gap: 4px; flex-wrap: wrap; margin: 16px 0 24px; border-bottom: 1px solid var(--line); }
+  nav.tabs button {
+    border: none; background: none; cursor: pointer;
+    font: inherit; font-size: 13.5px; font-weight: 600; color: var(--ink-2);
+    padding: 8px 14px; border-bottom: 3px solid transparent; letter-spacing: 0.5px;
+  }
+  nav.tabs button:hover { color: var(--c-teal); }
+  nav.tabs button.on { color: var(--c-teal); border-bottom-color: var(--c-teal); }
+  section.tab { display: none; }
+  section.tab.on { display: block; }
+
+  h2 { font-size: 17px; font-weight: 700; margin: 28px 0 4px; padding-left: 10px; border-left: 4px solid var(--c-teal); letter-spacing: 1px; }
+  h2:first-child { margin-top: 0; }
+  .h2-note { color: var(--ink-3); font-size: 12.5px; margin: 0 0 14px 14px; }
+
+  .kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+  .kpi .num { font-size: 26px; font-weight: 700; line-height: 1.2; }
+  .kpi .lab { color: var(--ink-2); font-size: 12.5px; margin-top: 2px; }
+  .kpi.k-teal .num { color: var(--c-teal); }
+  .kpi.k-blue .num { color: var(--c-blue); }
+  .kpi.k-amber .num { color: var(--c-amber); }
+  .kpi.k-red .num { color: var(--c-red); }
+  .kpi.k-violet .num { color: var(--c-violet); }
+
+  table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  th { background: #eef0f2; text-align: left; font-size: 12.5px; color: var(--ink-2); font-weight: 600; padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td ul, .risk ul, .rank-evi ul { margin-left: 17px; }
+  td ul li { margin-bottom: 2px; }
+
+  .chip { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .chip.active  { background: var(--c-teal-bg);   color: var(--c-teal); }
+  .chip.maint   { background: var(--c-blue-bg);   color: var(--c-blue); }
+  .chip.handover{ background: var(--c-amber-bg);  color: var(--c-amber); }
+  .chip.stalled { background: var(--c-red-bg);    color: var(--c-red); }
+  .chip.shadow  { background: var(--c-violet-bg); color: var(--c-violet); }
+  .chip.sm { font-size: 11px; padding: 0 7px; }
+
+  .repo { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .kw { font-size: 12px; color: var(--ink-2); }
+
+  .balance { width: 170px; padding: 6px 0 0; }
+  .balance .beam { position: relative; height: 10px; border-radius: 5px; background: #edeff1; transform-origin: center; }
+  .balance .beam i { position: absolute; top: 0; height: 100%; }
+  .balance .beam i.l { right: 50%; background: var(--c-red); border-radius: 5px 0 0 5px; }
+  .balance .beam i.r { left: 50%; background: var(--c-teal); border-radius: 0 5px 5px 0; }
+  .balance .beam .pivot { position: absolute; left: 50%; top: -2px; width: 2px; height: 14px; background: var(--card); transform: translateX(-50%); }
+  .balance .axis { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--ink-3); margin-top: 5px; }
+
+  .rank-card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; margin-bottom: 10px; display: grid; grid-template-columns: 56px 160px 1fr 290px; gap: 16px; align-items: start; }
+  .rank-no { font-size: 26px; font-weight: 700; color: var(--c-teal); line-height: 1.1; }
+  .rank-no .of { display:block; font-size: 11px; color: var(--ink-3); font-weight: 400; }
+  .rank-who .name { font-size: 16px; font-weight: 700; }
+  .rank-who .proj { font-size: 12.5px; color: var(--ink-2); margin-top: 3px; }
+  .rank-evi { font-size: 13px; color: var(--ink-2); }
+  .rank-evi li { margin-bottom: 3px; }
+  .rank-evi b { color: var(--ink); }
+  .dims { display: grid; grid-template-columns: 1fr; gap: 4px; }
+  .dim { display: grid; grid-template-columns: 88px 1fr 24px; gap: 8px; align-items: center; font-size: 12px; color: var(--ink-2); }
+  .bar { height: 7px; background: #edeff1; border-radius: 4px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--c-teal); border-radius: 4px; }
+  .dim .v { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+  .total-line { margin-top: 6px; font-size: 12.5px; font-weight: 700; color: var(--c-teal); }
+  .rank-card.low .rank-no { color: var(--c-amber); }
+  .rank-card.low .bar i { background: var(--c-amber); }
+  .rank-card.low .total-line { color: var(--c-amber); }
+  .rank-card.nodata .rank-no { color: var(--c-red); }
+  .rank-card.nodata .bar i { background: var(--c-red); }
+  .rank-card.nodata .total-line { color: var(--c-red); }
+
+  .gantt { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 18px; }
+  .g-scale { display: grid; grid-template-columns: 250px 1fr; gap: 12px; margin-bottom: 4px; }
+  .g-scale .months { position: relative; height: 18px; font-size: 11px; color: var(--ink-3); }
+  .g-scale .months span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+  .g-row { display: grid; grid-template-columns: 250px 1fr; gap: 12px; align-items: center; padding: 5px 0; border-top: 1px dashed var(--line); cursor: pointer; }
+  .g-row.hl { background: var(--c-amber-bg); }
+  .g-row.hl .g-name { color: var(--ink); font-weight: 700; }
+  .gantt.has-hl .g-row:not(.hl) .g-bar { opacity: 0.18 !important; }
+  .gantt.has-hl .g-row:not(.hl) .g-name { opacity: 0.45; }
+  .g-row .g-name { font-size: 12.5px; text-align: right; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .g-track { position: relative; height: 16px; background: repeating-linear-gradient(90deg, transparent 0, transparent calc(100%/17 - 1px), var(--line) calc(100%/17 - 1px), var(--line) calc(100%/17)); border-radius: 3px; }
+  .g-bar { position: absolute; top: 2px; height: 12px; border-radius: 3px; min-width: 8px; }
+  .g-mark { position: absolute; top: -3px; width: 2px; height: 22px; background: var(--ink); }
+  .g-legend { display: flex; gap: 18px; margin-top: 14px; font-size: 12px; color: var(--ink-2); flex-wrap: wrap; }
+  .g-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+  .arch { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 18px; }
+  .arch-layer { display: grid; grid-template-columns: 130px 1fr; gap: 14px; align-items: start; }
+  .arch-label { font-size: 12.5px; font-weight: 700; color: var(--ink-2); text-align: right; padding-top: 10px; line-height: 1.4; }
+  .arch-label .sub { display: block; font-weight: 400; font-size: 11px; color: var(--ink-3); }
+  .arch-boxes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .arch-box { border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; background: var(--bg); min-width: 130px; }
+  .arch-box b { font-size: 13px; display: block; }
+  .arch-box .who { font-size: 11.5px; color: var(--ink-2); }
+  .arch-box .flow { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+  .arch-layer.l1 .arch-box { border-top: 3px solid var(--c-violet); }
+  .arch-layer.l2 .arch-box { border-top: 3px solid var(--c-teal); }
+  .arch-layer.l3 .arch-box { border-top: 3px solid var(--c-blue); }
+  .arch-layer.l4 .arch-box { border-top: 3px solid var(--c-amber); }
+  .arch-box.dead { border-style: dashed; border-color: var(--c-red); background: var(--c-red-bg); }
+  .arch-box.dead b { color: var(--c-red); }
+  .arch-link { height: 16px; border-left: 2px dashed var(--line); margin-left: calc(130px + 14px + 40%); }
+
+  .road-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .road { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; border-top: 3px solid var(--c-teal); }
+  .road.maint { border-top-color: var(--c-blue); }
+  .road.handover { border-top-color: var(--c-amber); }
+  .road.stalled { border-top-color: var(--c-red); }
+  .road.shadow { border-top-color: var(--c-violet); }
+  .road h3 { font-size: 14.5px; font-weight: 700; }
+  .road .meta { font-size: 12px; color: var(--ink-3); margin: 2px 0 8px; }
+  .road ul { margin-left: 18px; font-size: 13px; color: var(--ink-2); }
+  .road li { margin-bottom: 3px; }
+
+  .risk { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--c-red); border-radius: 8px; padding: 14px 18px; margin-bottom: 10px; }
+  .risk.warn { border-left-color: var(--c-amber); }
+  .risk.info { border-left-color: var(--c-blue); }
+  .risk h3 { font-size: 13.5px; font-weight: 700; margin-bottom: 5px; }
+  .risk ul { font-size: 13px; color: var(--ink-2); }
+  .risk li { margin-bottom: 3px; }
+
+  details.fold { margin: 28px 0 10px; }
+  details.fold .arch { margin-bottom: 16px; }
+  details.fold .road-grid { margin-bottom: 16px; }
+  details.fold > summary { cursor: pointer; list-style: none; font-size: 17px; font-weight: 700; letter-spacing: 1px; padding-left: 10px; border-left: 4px solid var(--c-teal); position: relative; }
+  details.fold > summary::-webkit-details-marker { display: none; }
+  details.fold > summary .fold-sub { display: block; font-size: 12.5px; font-weight: 400; color: var(--ink-3); letter-spacing: 0; margin-top: 2px; }
+  details.fold[open] > summary { margin-bottom: 14px; }
+
+  #t-position table td { font-size: 12.5px; color: var(--ink-2); }
+  #t-position table td b { font-weight: 600; color: var(--ink); }
+
+  .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 0 0 16px; }
+  .toolbar button, .toolbar label.btn {
+    font: inherit; font-size: 12.5px; font-weight: 600;
+    border: 1px solid var(--line); background: var(--card); color: var(--ink-2);
+    border-radius: 6px; padding: 5px 14px; cursor: pointer;
+  }
+  .toolbar button:hover, .toolbar label.btn:hover { border-color: var(--c-teal); color: var(--c-teal); }
+  .toolbar .hint { font-size: 12px; color: var(--ink-3); margin-left: 4px; }
+  .toolbar .saved { font-size: 12px; color: var(--c-teal); font-weight: 600; display: none; }
+
+  input.score {
+    width: 60px; font: inherit; font-size: 13.5px; text-align: center;
+    border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px;
+    background: var(--c-amber-bg); color: var(--ink); font-variant-numeric: tabular-nums;
+  }
+  input.score:focus { outline: 2px solid var(--c-amber); border-color: var(--c-amber); }
+  textarea.note {
+    width: 100%; min-height: 38px; font: inherit; font-size: 12.5px; line-height: 1.5;
+    border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; resize: vertical;
+    background: var(--c-amber-bg); color: var(--ink);
+  }
+  textarea.note:focus { outline: 2px solid var(--c-amber); border-color: var(--c-amber); }
+  select.attr {
+    font: inherit; font-size: 12.5px; border: 1px solid var(--line); border-radius: 6px;
+    padding: 4px 6px; background: var(--c-amber-bg); color: var(--ink); width: 100%;
+  }
+  select.attr:focus { outline: 2px solid var(--c-amber); border-color: var(--c-amber); }
+  td.subtotal { font-weight: 700; color: var(--c-amber); }
+  td.ptoggle { cursor: pointer; user-select: none; }
+  td.ptoggle:hover b { color: var(--c-teal); }
+  tr.note-row td { background: hsl(35, 52%, 97%); }
+  tr.note-row .note-view { white-space: pre-wrap; font-size: 13px; line-height: 1.8; color: var(--ink); padding: 2px 6px; }
+  tr.note-row .note-view.empty { color: var(--ink-3); }
+  tr.note-row textarea.note { display: none; min-height: 56px; overflow: hidden; }
+  body.editing tr.note-row textarea.note { display: block; }
+  body.editing tr.note-row .note-view { display: none; }
+
+  #compositeTable td.total { font-weight: 700; color: var(--c-teal); }
+  #compositeTable td.rk { font-weight: 700; }
+  .delta-up { color: var(--c-teal); font-size: 12px; }
+  .delta-dn { color: var(--c-red); font-size: 12px; }
+
+  body.editing [data-edit] { outline: 1.5px dashed var(--c-amber); outline-offset: 3px; border-radius: 4px; min-height: 1em; }
+  body.editing [data-edit]:focus { outline: 2px solid var(--c-amber); background: var(--c-amber-bg); }
+  #editBtn.on { background: var(--c-amber); border-color: var(--c-amber); color: #fff; }
+
+  svg.archmap .ae, svg.archmap .an { transition: opacity 0.12s; }
+  svg.archmap.focus .ae { opacity: 0.08; }
+  svg.archmap.focus .ae.on { opacity: 1; stroke-width: 2.6; }
+  svg.archmap.focus .an { opacity: 0.22; }
+  svg.archmap.focus .an.on { opacity: 1; }
+
+  .tipbox {
+    position: fixed; z-index: 999; pointer-events: none; display: none;
+    background: var(--card); color: var(--ink);
+    border: 1px solid var(--line); border-left: 3px solid var(--c-teal);
+    border-radius: 8px; box-shadow: 0 6px 18px rgba(43,48,54,0.14);
+    padding: 7px 12px; font-size: 12.5px; line-height: 1.55; max-width: 300px;
+  }
+
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 12px; }
+  @media (max-width: 900px) {
+    .kpi-row { grid-template-columns: repeat(3, 1fr); }
+    .rank-card { grid-template-columns: 48px 1fr; }
+    .rank-evi, .dims { grid-column: 1 / -1; }
+    .road-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="page">
+  <h1>BCCS 研發專案配置與人員能力儀表板</h1>
+  <div class="sub">
+    <span>產出日期：2026-06-11</span>
+    <span>視角：系統分析與專案管理</span>
+    <span>資料來源：內部版本庫（192.168.3.229:3000/BCCS-RD）與雲端版本庫（github.com/BCCS-Devs）</span>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="t-overview" class="on">總覽</button>
+  <button data-tab="t-rank">技術評分</button>
+  <button data-tab="t-drift">規劃一致性</button>
+  <button data-tab="t-manual">綜合項目評分</button>
+  <button data-tab="t-roadmap">公司系統架構</button>
+  <button data-tab="t-risks">風險建議</button>
+  <button data-tab="t-position">漢昕軟體開發定位</button>
+</nav>
+
+<div class="toolbar">
+  <button id="editBtn" type="button">編輯模式：關</button>
+  <button id="exportBtn" type="button">匯出我的填寫內容</button>
+  <label class="btn">匯入<input type="file" id="importFile" accept=".json" style="display:none"></label>
+  <button id="resetBtn" type="button">清除所有填寫內容</button>
+  <span class="hint">評分、歸因與編輯內容會自動儲存在這台電腦的瀏覽器內；換電腦請先匯出再匯入。</span>
+  <span class="saved" id="savedTip">已儲存</span>
+</div>
+
+<!-- ==================== 總覽 ==================== -->
+<section class="tab on" id="t-overview">
+  <h2>總覽指標</h2>
+  <p class="h2-note">盤點範圍排除流程測試庫（TestCICD、TestCICD2）；弱點管理平台（Dylan）與文件知識庫系統（Wiwi）已於 2026-06-11 補列進配置。停擺三案：人資考勤、資安健診、企業入口（單一登入轉型）。版本庫總數含待廢除的 EIP 舊系統（BCCS-EIP-VB.NET）。</p>
+  <div class="kpi-row" style="grid-template-columns: repeat(5, 1fr);">
+    <div class="kpi k-teal"><div class="num">8</div><div class="lab">開發中</div></div>
+    <div class="kpi k-blue"><div class="num">3</div><div class="lab">進入維運</div></div>
+    <div class="kpi k-red"><div class="num">3</div><div class="lab">停擺</div></div>
+    <div class="kpi k-amber"><div class="num">1</div><div class="lab">待廢除（EIP 舊系統）</div></div>
+    <div class="kpi k-violet"><div class="num">14</div><div class="lab">版本庫總數</div></div>
+  </div>
+
+  <h2>專案時程總覽</h2>
+  <p class="h2-note">
+    依狀態分組（開發中、交接中、維運中，停擺殿後），組內依開始月份排序；一個專案一個顏色（同一飽和度的五個色相家族做明度階層，顏色不代表狀態，狀態見列首標籤）。
+    橫軸為 2025-02 至 2026-07。
+    分段長條代表負責人或階段轉換（如專案管理系統、生成式報告系統），滑鼠移到任一色段會顯示該階段的負責人與起訖；黑色刻線為上線時點。
+    點擊任一列可凸顯該專案，再點一次取消。
+  </p>
+  <div class="gantt">
+    <div class="g-scale">
+      <div></div>
+      <div class="months">
+        <span style="left:0%">2025-02</span>
+        <span style="left:23.5%">2025-06</span>
+        <span style="left:47%">2025-10</span>
+        <span style="left:64.7%">2026-01</span>
+        <span style="left:82.4%">2026-04</span>
+        <span style="left:97%">2026-07</span>
+      </div>
+    </div>
+    <div class="g-row"><div class="g-name">弱點管理平台 <span class="chip active sm">開發中</span></div><div class="g-track"><div class="g-bar" data-tip="Dylan 獨力開發（2026-01 起）" style="left:64.7%; width:31.2%; background:hsl(262,32%,50%)"></div></div></div>
+    <div class="g-row"><div class="g-name">模型推論平台 <span class="chip active sm">開發中</span></div><div class="g-track"><div class="g-bar" data-tip="Jsnn 開發與維護（2026-01 起）" style="left:64.7%; width:31.2%; background:hsl(178,42%,34%)"></div></div></div>
+    <div class="g-row"><div class="g-name">資安大師 <span class="chip active sm">開發中</span></div><div class="g-track">
+      <div class="g-bar" data-tip="第一階段：Weiyao 需求與前端（2026-03 至 2026-05）" style="left:77.6%; width:16.6%; background:hsl(178,42%,55%)"></div>
+      <div class="g-bar" data-tip="第二階段：Ted 後端接手（2026-06 起），Weiyao 續任需求端" style="left:94.2%; width:1.9%; background:hsl(178,42%,35%)"></div>
+    </div></div>
+    <div class="g-row"><div class="g-name">文件知識庫系統 <span class="chip active sm">開發中</span></div><div class="g-track"><div class="g-bar" data-tip="Wiwi 獨力開發（2026-03 起）" style="left:77.6%; width:18.3%; background:hsl(262,32%,66%)"></div></div></div>
+    <div class="g-row"><div class="g-name">線上評量系統 <span class="chip active sm">開發中</span></div><div class="g-track"><div class="g-bar" data-tip="Zane 訓練用開發（2026-04 起）" style="left:85.9%; width:8.2%; background:hsl(35,52%,70%)"></div></div></div>
+    <div class="g-row"><div class="g-name">代理端點服務 <span class="chip active sm">開發中</span></div><div class="g-track"><div class="g-bar" data-tip="Jsnn 開發（2026-05 起）" style="left:92.4%; width:3.5%; background:hsl(178,42%,64%)"></div></div></div>
+    <div class="g-row"><div class="g-name">專案管理系統 <span class="chip handover sm">交接中</span></div><div class="g-track">
+      <div class="g-bar" data-tip="第一階段：前團隊開發（2025-07 至 2025-12）" style="left:29.1%; width:35.4%; background:hsl(35,52%,58%)"></div>
+      <div class="g-bar" data-tip="第二階段：Ren 輔助開發（2026-02 底至 2026-04-30 上線）" style="left:75.0%; width:13.0%; background:hsl(35,52%,44%)"></div>
+      <div class="g-bar" data-tip="上線後維護：Aria 主導、Ren 輔助（2026-05 起）" style="left:88.0%; width:8.1%; background:hsl(35,52%,44%); opacity:0.45"></div>
+      <div class="g-mark" style="left:88.0%" data-tip="2026-04-30 上線"></div>
+    </div></div>
+    <div class="g-row"><div class="g-name">advMDR 戰情中心 <span class="chip handover sm">交接中</span></div><div class="g-track">
+      <div class="g-bar" data-tip="第一階段：Jsnn 獨力開發（2026-02 至 2026-05）" style="left:70.6%; width:22.2%; background:hsl(35,52%,30%)"></div>
+      <div class="g-bar" data-tip="第二階段：交接期，Jsnn 主力、Nick 接手中（2026-05 底起）" style="left:92.8%; width:3.3%; background:hsl(35,52%,48%)"></div>
+    </div></div>
+    <div class="g-row"><div class="g-name">社交工程系統 <span class="chip maint sm">維運中</span></div><div class="g-track">
+      <div class="g-bar" data-tip="第一階段：原團隊開發（2025-02 至 2026-03，已離職）" style="left:0%; width:82.3%; background:hsl(215,42%,60%)"></div>
+      <div class="g-bar" data-tip="第二階段：Ivan 接手維運與新功能（2026-04 起）" style="left:82.3%; width:13.8%; background:hsl(215,42%,40%)"></div>
+    </div></div>
+    <div class="g-row"><div class="g-name">生成式報告系統 <span class="chip maint sm">維運中</span></div><div class="g-track">
+      <div class="g-bar" data-tip="第一階段：Wiwi 開發（2025-09 至 2026-02）" style="left:41.2%; width:35.1%; background:hsl(215,42%,72%)"></div>
+      <div class="g-bar" data-tip="接手維護：Ivan（2026-03 起）" style="left:76.3%; width:18.4%; background:hsl(215,42%,55%)"></div>
+    </div></div>
+    <div class="g-row"><div class="g-name">公司官網 <span class="chip maint sm">維運中</span></div><div class="g-track">
+      <div class="g-bar" data-tip="第一階段：Aria、Dylan 共同開發（2025-10 至 2026-03）" style="left:47.0%; width:29.3%; background:hsl(215,42%,30%)"></div>
+      <div class="g-bar" data-tip="第二階段：Aria 收尾與維護（2026-03 至 2026-05-26）" style="left:76.3%; width:16.7%; background:hsl(215,42%,48%)"></div>
+      <div class="g-bar" data-tip="第三階段：Anne 名義維護（2026-05 底起，查無提交紀錄）" style="left:93.0%; width:3.1%; background:hsl(215,42%,48%); opacity:0.35"></div>
+    </div></div>
+    <div class="g-row"><div class="g-name">人資考勤系統 <span class="chip stalled sm">停擺</span></div><div class="g-track"><div class="g-bar" data-tip="Harry 開發（2026-01 至 03，已離職），僅前端" style="left:64.7%; width:15.9%; background:hsl(8,48%,46%)"></div></div></div>
+    <div class="g-row"><div class="g-name">資安健診系統 <span class="chip stalled sm">停擺</span></div><div class="g-track"><div class="g-bar" data-tip="Wiwi 開發（2026-01 至 02），實質中止" style="left:64.7%; width:4.4%; background:hsl(8,48%,62%)"></div></div></div>
+    <div class="g-row"><div class="g-name">企業入口（單一登入轉型） <span class="chip stalled sm">停擺</span></div><div class="g-track"><div class="g-bar" data-tip="EIP 廢除後的轉型規劃：登入一次進入全部內部系統；因資料在 NAS、微軟帳戶建置困難，於 2026-01 月初停擺" style="left:58.8%; width:6.4%; background:hsl(8,48%,38%)"></div></div></div>
+  </div>
+
+  <h2>評分方法與限制</h2>
+  <p class="h2-note">先理解尺的刻度，再看分數。</p>
+  <table>
+    <thead><tr><th style="width:170px">評分層</th><th style="width:130px">本儀表板</th><th>說明</th></tr></thead>
+    <tbody>
+      <tr><td>產出量與節奏</td><td><span class="chip active">已涵蓋</span></td><td>各版本庫提交量、持續性抽樣統計；只能測「活動」，不能測「價值」。</td></tr>
+      <tr><td>分支紀律與流程</td><td><span class="chip active">已涵蓋</span></td><td>分支制度、部署管線、提交粒度。</td></tr>
+      <tr><td>接手他人系統實績</td><td><span class="chip active">已涵蓋</span></td><td>現有資料中含金量最高的指標：誰能動別人寫的程式並讓它持續上線。</td></tr>
+      <tr><td>規劃一致性</td><td><span class="chip handover">半自動</span></td><td>早期與近期提交主題的漂移率自動計算，漂移原因由人工歸因（見「規劃一致性」分頁）。</td></tr>
+      <tr><td>程式審查品質</td><td><span class="chip stalled">測不到</span></td><td>各庫幾乎無拉取請求流程，無審查紀錄可分析。</td></tr>
+      <tr><td>缺陷率與回歸歸因</td><td><span class="chip stalled">測不到</span></td><td>無問題追蹤與提交的關聯資料。</td></tr>
+      <tr><td>大局觀、邏輯、積極主動性、團隊參與度</td><td><span class="chip handover">人工評分補足</span></td><td>量化資料的天然盲區，由「綜合項目評分」分頁人工填寫，與技術評分合併為總排名。</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== 技術評分 ==================== -->
+<section class="tab" id="t-rank">
+  <h2>技術評分（依版本庫證據，九人）</h2>
+  <p class="h2-note">
+    五維各五分、滿分二十五分。此分頁只反映版本庫可查證的事實；
+    合併人工評分後的總排名請看「綜合項目評分」分頁。
+    輔助人員（Ren、Weiyao）不列入，於表末附觀察。
+  </p>
+
+  <div class="rank-card">
+    <div class="rank-no">1<span class="of">技術分</span></div>
+    <div class="rank-who">
+      <div class="name">Jsnn</div>
+      <div class="proj">advMDR 戰情中心、模型推論平台、代理端點服務</div>
+    </div>
+    <div class="rank-evi" data-edit="evi-jsnn">
+      <ul>
+        <li>一人同時建置三個平台：戰情中心（<span class="repo">BCCS-SOC-Portal</span>，2026-02 起）、模型推論平台（2026-03 起）、代理端點服務（2026-05 起）</li>
+        <li>三庫近期提交幾乎全數出自其一人</li>
+        <li>分支制度全員最完整：開發、預備、正式三線並行，另有正式部署管線分支</li>
+        <li>年度平台活動量四百七十五次，排行人員中最高</li>
+        <li><b>唯一同時具備系統開發、模型基礎建設與部署管線能力的人員</b></li>
+      </ul>
+    </div>
+    <div class="dims">
+      <div class="dim"><span>產出量</span><div class="bar"><i style="width:100%"></i></div><span class="v">5</span></div>
+      <div class="dim"><span>技術廣度</span><div class="bar"><i style="width:100%"></i></div><span class="v">5</span></div>
+      <div class="dim"><span>獨立交付</span><div class="bar"><i style="width:100%"></i></div><span class="v">5</span></div>
+      <div class="dim"><span>流程成熟度</span><div class="bar"><i style="width:100%"></i></div><span class="v">5</span></div>
+      <div class="dim"><span>接手維運</span><div class="bar"><i style="width:60%"></i></div><span class="v">3</span></div>
+      <div class="total-line">技術分 23／25</div>
+    </div>
+  </div>
+
+  <div class="rank-card">
+    <div class="rank-no">2<span class="of">技術分</span></div>
+    <div class="rank-who">
+      <div class="name">Wiwi</div>
+      <div class="proj">生成式報告系統（已交接）、資安健診系統（停擺）、文件知識庫系統</div>
+    </div>
+    <div class="rank-evi" data-edit="evi-wiwi">
+      <ul>
+        <li>產出量全員最高：生成式報告系統累計一千一百六十六筆提交</li>
+        <li>健診系統八十七筆；文件知識庫系統（<span class="repo">BCCS-AI-Document-RAG</span>）2026-05-27 起獨力開發至今</li>
+        <li>三套系統皆從零起建：拖拉式版面、資料繫結、文件產出、檢索增強生成</li>
+        <li><b>從零到一的建置能力最強</b></li>
+        <li>弱項：經手系統多由他人接手收尾，健診系統即停在自己手上</li>
+      </ul>
+    </div>
+    <div class="dims">
+      <div class="dim"><span>產出量</span><div class="bar"><i style="width:100%"></i></div><span class="v">5</span></div>
+      <div class="dim"><span>技術廣度</span><div class="bar"><i style="width:80%"></i></div><span class="v">4</span></div>
+      <div class="dim"><span>獨立交付</span><div class="bar"><i style="width:100%"></i></div><span class="v">5</span></div>
+      <div class="dim"><span>流程成熟度</span><div class="bar"><i style="width:80%"></i></div><span class="v">4</span></div>
+      <div class="dim"><span>接手維運</span><div class="bar"><i style="width:60%"></i></div><span class="v">3</span></div>
+      <div class="total-line">技術分 21／25</div>
+    </div>
+  </div>
+
+  <div class="rank-card">
+    <div class="rank-no">3<span class="of">技術分</span></div>
+    <div class="rank-who">
+      <div class="name">Aria</div>
+      <div class="proj">專案管理系統（接手主導）、公司官網（已交接）</div>
+    </div>
+    <div class="rank-evi" data-edit="evi-aria">
+      <ul>
+        <li>官網共同開發一百三十八筆貢獻</li>
+        <li>專案管理系統建立多條功能分支：教學導覽、標註功能等</li>
+        <li>現接手全公司最大代碼庫（<span class="repo">PMS-StandardLifecycle</span>，前後端整合系統）</li>
+        <li>跨前後端，且是少數有「接手大型系統」任務在身的人員</li>
+        <li><b>待觀察：</b>近四百筆提交中僅五筆出自其手，交接深度不足</li>
+      </ul>
+    </div>
+    <div class="dims">
+      <div class="dim"><span>產出量</span><div class="bar"><i style="width:80%"></i></div><span class="v">4</span></div>
+      <div class="dim"><span>技術廣度</span><div class="bar"><i style="width:80%"></i></div><span class="v">4</span></div>
+      <div class="dim"><span>獨立交付</span><div class="bar"><i style="width:80%"></i></div><span class="v">4</span></div>
+      <div class="dim"><span>流程成熟度</span><div class="bar"><i style="width:60%"></i></div><span class="v">3</span></div>
+      <div class="dim"><span>接手維運</span><div class="bar"><i style="width:80%"></i></div><span class="v">4</span></div>
+      <div class="total-line">技術分 19／25</div>
+    </div>
+  </div>
+
+  <div class="rank-card">
+    <div class="rank-no">4<span class="of">技術分</span></div>
+    <div class="rank-who">
+      <div class="name">Ivan</div>
+      <div class="proj">社交工程系統（維運中）、生成式報告系統（接手維護）</div>
+    </div>
+    <div class="rank-evi" data-edit="evi-ivan">
+      <ul>
+        <li>接手兩套「別人寫的系統」並穩定維運</li>
+        <li>社交工程系統：原離職團隊作品，2026-04 起一百九十九筆提交、持續至今日</li>
+        <li>生成式報告系統：接手後五十二筆提交</li>
+        <li><b>接手他人遺留系統並讓它持續上線的實績全員最完整</b>，在離職風險下價值極高</li>
+        <li>弱項：自建系統的紀錄尚未出現</li>
+      </ul>
+    </div>
+    <div class="dims">
+      <div class="dim"><span>產出量</span><div class="bar"><i style="width:60%"></i></div><span class="v">3</span></div>
+      <div class="dim"><span>技術廣度</span><div class="bar"><i style="width:60%"></i></div><span class="v">3</span></div>
+      <div class="dim"><span>獨立交付</span><div class="bar"><i style="width:60%"></i></div><span class="v">3</span></div>
+      <div class="dim"><span>流程成熟度</span><div class="bar"><i style="width:60%"></i></div><span class="v">3</span></div>
+      <div class="dim"><span>接手維運</span><div class="bar"><i style="width:100%"></i></div><span class="v">5</span></div>
+      <div class="total-line">技術分 17／25</div>
+    </div>
+  </div>
+
+  <div class="rank-card">
+    <div class="rank-no">5<span class="of">技術分</span></div>
+    <div class="rank-who">
+      <div class="name">Dylan</div>
+      <div class="proj">弱點管理平台、公司官網（已交接）</div>
+    </div>
+    <div class="rank-evi" data-edit="evi-dylan">
+      <ul>
+        <li>官網最大貢獻者：一百七十八筆，高於 Aria 的一百三十八筆</li>
+        <li>2026-01 起獨力開發弱點管理平台（<span class="repo">BCCS-VulnScan</span>），整合外部掃描工具</li>
+        <li>累計一百六十六筆以上提交，今日仍有活動</li>
+        <li>自建開發、預備、正式三線分支制度</li>
+        <li><b>產出穩定、流程紀律好</b>；主力專案原在配置清單外，2026-06-11 已補列</li>
+      </ul>
+    </div>
+    <div class="dims">
+      <div class="dim"><span>產出量</span><div class="bar"><i style="width:80%"></i></div><span class="v">4</span></div>
+      <div class="dim"><span>技術廣度</span><div class="bar"><i style="width:60%"></i></div><span class="v">3</span></div>
+      <div class="dim"><span>獨立交付</span><div class="bar"><i style="width:80%"></i></div><span class="v">4</span></div>
+      <div class="dim"><span>流程成熟度</span><div class="bar"><i style="width:80%"></i></div><span class="v">4</span></div>
+      <div class="dim"><span>接手維運</span><div class="bar"><i style="width:40%"></i></div><span class="v">2</span></div>
+      <div class="total-line">技術分 17／25</div>
+    </div>
+  </div>
+
+  <div class="rank-card">
+    <div class="rank-no">6<span class="of">技術分</span></div>
+    <div class="rank-who">
+      <div class="name">Ted</div>
+      <div class="proj">資安大師後端（接手開發中）</div>
+    </div>
+    <div class="rank-evi" data-edit="evi-ted">
+      <ul>
+        <li>2026-06-01 接手資安大師後端（<span class="repo">BCCS-ISMS</span>）</li>
+        <li>十天內四十九筆提交，節奏明確</li>
+        <li>分支主題清楚：參數設定、資產區域調整</li>
+        <li><b>起步速度快、提交粒度健康</b></li>
+        <li>弱項：僅單一系統、單一技術面向的紀錄，廣度待累積</li>
+      </ul>
+    </div>
+    <div class="dims">
+      <div class="dim"><span>產出量</span><div class="bar"><i style="width:60%"></i></div><span class="v">3</span></div>
+      <div class="dim"><span>技術廣度</span><div class="bar"><i style="width:40%"></i></div><span class="v">2</span></div>
+      <div class="dim"><span>獨立交付</span><div class="bar"><i style="width:60%"></i></div><span class="v">3</span></div>
+      <div class="dim"><span>流程成熟度</span><div class="bar"><i style="width:60%"></i></div><span class="v">3</span></div>
+      <div class="dim"><span>接手維運</span><div class="bar"><i style="width:60%"></i></div><span class="v">3</span></div>
+      <div class="total-line">技術分 14／25</div>
+    </div>
+  </div>
+
+  <div class="rank-card low">
+    <div class="rank-no">7<span class="of">技術分</span></div>
+    <div class="rank-who">
+      <div class="name">Nick</div>
+      <div class="proj">advMDR 戰情中心（交接初期）</div>
+    </div>
+    <div class="rank-evi" data-edit="evi-nick">
+      <ul>
+        <li>戰情中心開發分支近五十筆提交中佔六筆，其餘皆 Jsnn</li>
+        <li>年度平台活動量五十次</li>
+        <li>交接剛起步，現有證據不足以評估上限</li>
+        <li><b>關鍵指標：</b>未來八週內能否在戰情中心獨立關閉問題與交付功能</li>
+      </ul>
+    </div>
+    <div class="dims">
+      <div class="dim"><span>產出量</span><div class="bar"><i style="width:20%"></i></div><span class="v">1</span></div>
+      <div class="dim"><span>技術廣度</span><div class="bar"><i style="width:40%"></i></div><span class="v">2</span></div>
+      <div class="dim"><span>獨立交付</span><div class="bar"><i style="width:40%"></i></div><span class="v">2</span></div>
+      <div class="dim"><span>流程成熟度</span><div class="bar"><i style="width:40%"></i></div><span class="v">2</span></div>
+      <div class="dim"><span>接手維運</span><div class="bar"><i style="width:40%"></i></div><span class="v">2</span></div>
+      <div class="total-line">技術分 9／25（交接初期，會浮動）</div>
+    </div>
+  </div>
+
+  <div class="rank-card low">
+    <div class="rank-no">8<span class="of">技術分</span></div>
+    <div class="rank-who">
+      <div class="name">Zane</div>
+      <div class="proj">線上評量系統（流程熟悉用）</div>
+    </div>
+    <div class="rank-evi" data-edit="evi-zane">
+      <ul>
+        <li>線上評量系統 2026-06-05 至 06-09 五十筆提交</li>
+        <li>全數以公司共用輔助開發帳號名義送出（提交者 bccsclaude04，推定為其工具帳號）</li>
+        <li>學習階段：產出存在但無法直接歸戶，尚無獨立交付或接手紀錄</li>
+        <li><b>建議：</b>先解決提交身份歸戶，否則成長無法被量化</li>
+      </ul>
+    </div>
+    <div class="dims">
+      <div class="dim"><span>產出量</span><div class="bar"><i style="width:40%"></i></div><span class="v">2</span></div>
+      <div class="dim"><span>技術廣度</span><div class="bar"><i style="width:20%"></i></div><span class="v">1</span></div>
+      <div class="dim"><span>獨立交付</span><div class="bar"><i style="width:40%"></i></div><span class="v">2</span></div>
+      <div class="dim"><span>流程成熟度</span><div class="bar"><i style="width:40%"></i></div><span class="v">2</span></div>
+      <div class="dim"><span>接手維運</span><div class="bar"><i style="width:20%"></i></div><span class="v">1</span></div>
+      <div class="total-line">技術分 8／25（學習階段）</div>
+    </div>
+  </div>
+
+  <div class="rank-card nodata">
+    <div class="rank-no">9<span class="of">技術分</span></div>
+    <div class="rank-who">
+      <div class="name">Anne</div>
+      <div class="proj">公司官網（維護與優化，名義上）</div>
+    </div>
+    <div class="rank-evi" data-edit="evi-anne">
+      <ul>
+        <li>兩個版本庫來源皆查無任何提交紀錄</li>
+        <li>內部平台年度活動量為零</li>
+        <li>官網最後一筆提交為 2026-05-26、由 Aria 送出</li>
+        <li><b>配置與資料對不上：</b>若有產出，代表工作沒進版本控制；若沒有，官網實質無人維護</li>
+        <li>兩種情況都需處理，這比排名本身重要</li>
+      </ul>
+    </div>
+    <div class="dims">
+      <div class="dim"><span>產出量</span><div class="bar"><i style="width:0%"></i></div><span class="v">0</span></div>
+      <div class="dim"><span>技術廣度</span><div class="bar"><i style="width:0%"></i></div><span class="v">－</span></div>
+      <div class="dim"><span>獨立交付</span><div class="bar"><i style="width:0%"></i></div><span class="v">－</span></div>
+      <div class="dim"><span>流程成熟度</span><div class="bar"><i style="width:0%"></i></div><span class="v">－</span></div>
+      <div class="dim"><span>接手維運</span><div class="bar"><i style="width:0%"></i></div><span class="v">－</span></div>
+      <div class="total-line">資料不足，技術分以 0 計，待補證</div>
+    </div>
+  </div>
+
+  <h2>輔助人員觀察（不列入排行）</h2>
+  <table>
+    <thead><tr><th style="width:90px">人員</th><th style="width:220px">角色</th><th>可查證事實</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>Ren</b></td>
+        <td>專案管理系統現階段除錯支援</td>
+        <td data-edit="obs-ren">
+          <ul>
+            <li>內部平台年度活動量六百四十七次，全平台最高</li>
+            <li>專案管理系統開發分支近四百筆提交中佔三百九十三筆，並負責部署流程設定</li>
+            <li>實質上仍是該系統的主要產出者，與「輔助」定位落差大</li>
+            <li>交接給 Aria 的速度，決定該系統單點風險何時解除</li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td><b>Weiyao</b></td>
+        <td>資安大師需求端與前端</td>
+        <td data-edit="obs-weiyao">
+          <ul>
+            <li>資安大師主線五十筆提交（2026-04 至 05）</li>
+            <li>曾支援專案管理系統除錯分支</li>
+            <li>年度平台活動量一百九十四次</li>
+            <li>提交身份混用三種名義（公司信箱兩種格式與個人信箱），歸戶不乾淨</li>
+          </ul>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== 規劃一致性 ==================== -->
+<section class="tab" id="t-drift">
+  <h2>規劃一致性（自動計算＋人工備註）</h2>
+  <p class="h2-note">
+    符合度衡量的是：系統功能從初期規劃、初中期開發、到收尾或交接，方向有無重大偏離。
+    判定原則：新增功能、小幅方向調整視為符合；文件交接與收尾不算不符合；只有功能方向的重大轉換或規劃與交付的明顯落差才往左計。
+    數值由提交主題統計自動產生、再依上述原則人工校準；不同意判讀可在備註欄修正。
+  </p>
+  <table id="driftTable">
+    <thead>
+      <tr>
+        <th style="width:130px">系統／負責人</th>
+        <th style="width:180px">規劃符合度</th>
+        <th style="width:180px">早期主題（自動萃取）</th>
+        <th style="width:180px">近期主題（自動萃取）</th>
+        <th>系統解讀</th>
+        <th style="width:180px">備註</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr data-drift="soc">
+        <td><b>advMDR 戰情中心</b><div class="repo">Jsnn、Nick</div></td>
+        <td><div class="balance" data-tip="符合度 85／100（自動統計＋人工校準）"><div class="beam"><i class="l" style="width:7.5%"></i><i class="r" style="width:42.5%"></i><span class="pivot"></span></div><div class="axis"><span>不符合</span><span>符合</span></div></div></td>
+        <td class="kw">計畫文件、資料庫、測試</td>
+        <td class="kw">計畫對齊、歸檔、部署管線</td>
+        <td data-edit="drift-soc">計畫文件驅動開發，從規劃到實作詞彙穩定，方向無偏離。</td>
+        <td></td>
+      </tr>
+      <tr data-drift="grs">
+        <td><b>生成式報告系統</b><div class="repo">Wiwi、Ivan</div></td>
+        <td><div class="balance" data-tip="符合度 85／100（自動統計＋人工校準）"><div class="beam"><i class="l" style="width:7.5%"></i><i class="r" style="width:42.5%"></i><span class="pivot"></span></div><div class="axis"><span>不符合</span><span>符合</span></div></div></td>
+        <td class="kw">功能開發、錯誤修復、資料庫</td>
+        <td class="kw">文件匯出細修：表格、字型、目錄</td>
+        <td data-edit="drift-grs">初期功能建置、後期輸出品質微調，功能方向一致；交接屬人力轉換，不影響符合度。</td>
+        <td></td>
+      </tr>
+      <tr data-drift="learn">
+        <td><b>線上評量系統</b><div class="repo">Zane</div></td>
+        <td><div class="balance" data-tip="符合度 85／100（自動統計＋人工校準）"><div class="beam"><i class="l" style="width:7.5%"></i><i class="r" style="width:42.5%"></i><span class="pivot"></span></div><div class="axis"><span>不符合</span><span>符合</span></div></div></td>
+        <td class="kw">規格對齊、體驗設計、規劃</td>
+        <td class="kw">租戶管理、應試者、後台清單</td>
+        <td data-edit="drift-learn">統計上詞彙全換（規格期切到實作期），但實作項目與規格對應良好，校準後判定為符合。</td>
+        <td></td>
+      </tr>
+      <tr data-drift="pms">
+        <td><b>專案管理系統</b><div class="repo">Ren、Aria</div></td>
+        <td><div class="balance" data-tip="符合度 80／100（自動統計＋人工校準）"><div class="beam"><i class="l" style="width:10.0%"></i><i class="r" style="width:40.0%"></i><span class="pivot"></span></div><div class="axis"><span>不符合</span><span>符合</span></div></div></td>
+        <td class="kw">商機與專案管理、人資整合介接、額度池</td>
+        <td class="kw">結案流程、管理後台、部署管線</td>
+        <td data-edit="drift-pms">主題連續，從建置走向收斂結案，新功能屬規劃內演進。</td>
+        <td></td>
+      </tr>
+      <tr data-drift="vuln">
+        <td><b>弱點管理平台</b><div class="repo">Dylan</div></td>
+        <td><div class="balance" data-tip="符合度 80／100（自動統計＋人工校準）"><div class="beam"><i class="l" style="width:10.0%"></i><i class="r" style="width:40.0%"></i><span class="pivot"></span></div><div class="axis"><span>不符合</span><span>符合</span></div></div></td>
+        <td class="kw">掃描功能、權限、增強</td>
+        <td class="kw">掃描器管理、複測流程、文件</td>
+        <td data-edit="drift-vuln">掃描核心未變，複測流程屬範圍內擴充。</td>
+        <td></td>
+      </tr>
+      <tr data-drift="llm">
+        <td><b>模型推論平台</b><div class="repo">Jsnn</div></td>
+        <td><div class="balance" data-tip="符合度 80／100（自動統計＋人工校準）"><div class="beam"><i class="l" style="width:10.0%"></i><i class="r" style="width:40.0%"></i><span class="pivot"></span></div><div class="axis"><span>不符合</span><span>符合</span></div></div></td>
+        <td class="kw">計畫、實作、提示詞設計</td>
+        <td class="kw">評測流程、監控儀表板</td>
+        <td data-edit="drift-llm">從建置走向評測與監控，是平台成熟的正常路徑。</td>
+        <td></td>
+      </tr>
+      <tr data-drift="isms">
+        <td><b>資安大師</b><div class="repo">Weiyao、Ted</div></td>
+        <td><div class="balance" data-tip="符合度 75／100（自動統計＋人工校準）"><div class="beam"><i class="l" style="width:12.5%"></i><i class="r" style="width:37.5%"></i><span class="pivot"></span></div><div class="axis"><span>不符合</span><span>符合</span></div></div></td>
+        <td class="kw">介面模組、階段性開發、流程</td>
+        <td class="kw">後端參數設定、條文庫、結案對齊</td>
+        <td data-edit="drift-isms">六月換手後開發面向從前端切到後端，制度管理主軸未變。</td>
+        <td></td>
+      </tr>
+      <tr data-drift="ssc">
+        <td><b>社交工程系統</b><div class="repo">原團隊、Ivan</div></td>
+        <td><div class="balance" data-tip="符合度 75／100（自動統計＋人工校準）"><div class="beam"><i class="l" style="width:12.5%"></i><i class="r" style="width:37.5%"></i><span class="pivot"></span></div><div class="axis"><span>不符合</span><span>符合</span></div></div></td>
+        <td class="kw">後台管理、公司管理（原團隊）</td>
+        <td class="kw">頁面修正、合併（Ivan 接手後）</td>
+        <td data-edit="drift-ssc">世代交替後轉維運修正，功能方向未偏離。</td>
+        <td></td>
+      </tr>
+      <tr data-drift="clinic">
+        <td><b>資安健診系統</b><div class="repo">Wiwi</div></td>
+        <td><div class="balance" data-tip="符合度 70／100（自動統計＋人工校準）"><div class="beam"><i class="l" style="width:15.0%"></i><i class="r" style="width:35.0%"></i><span class="pivot"></span></div><div class="axis"><span>不符合</span><span>符合</span></div></div></td>
+        <td class="kw">檢視功能、惡意活動、網路目錄</td>
+        <td class="kw">文檔、交接、優化</td>
+        <td data-edit="drift-clinic">末期轉為文件交接收尾——依校準原則收尾不算偏離；惟功能僅完成初期範圍即中止。</td>
+        <td></td>
+      </tr>
+      <tr data-drift="sdk">
+        <td><b>代理端點服務</b><div class="repo">Jsnn</div></td>
+        <td><div class="balance" data-tip="符合度 70／100（自動統計＋人工校準）"><div class="beam"><i class="l" style="width:15.0%"></i><i class="r" style="width:35.0%"></i><span class="pivot"></span></div><div class="axis"><span>不符合</span><span>符合</span></div></div></td>
+        <td class="kw">初始化、規劃</td>
+        <td class="kw">預設組、可觀測性、執行器</td>
+        <td data-edit="drift-sdk">開案僅兩週、樣本太小，暫以中性顯示，下次重跑再判。</td>
+        <td></td>
+      </tr>
+      <tr data-drift="rag">
+        <td><b>文件知識庫系統</b><div class="repo">Wiwi</div></td>
+        <td><div class="balance" data-tip="符合度 60／100（自動統計＋人工校準）"><div class="beam"><i class="l" style="width:20.0%"></i><i class="r" style="width:30.0%"></i><span class="pivot"></span></div><div class="axis"><span>不符合</span><span>符合</span></div></div></td>
+        <td class="kw">需求書配對分析、文件增強</td>
+        <td class="kw">標準作業程序模組、預覽、建議書</td>
+        <td data-edit="drift-rag">從配對分析擴張到建議書生成與標準程序模組，超出初始規劃範圍，且規格文件未同步更新。</td>
+        <td></td>
+      </tr>
+      <tr data-drift="web">
+        <td><b>公司官網</b><div class="repo">Aria、Dylan、Anne</div></td>
+        <td><div class="balance" data-tip="符合度 50／100（自動統計＋人工校準）"><div class="beam"><i class="l" style="width:25.0%"></i><i class="r" style="width:25.0%"></i><span class="pivot"></span></div><div class="axis"><span>不符合</span><span>符合</span></div></div></td>
+        <td class="kw">後端、新聞功能</td>
+        <td class="kw">響應式版面、前端介面改版、服務頁</td>
+        <td data-edit="drift-web">後端新聞功能轉向前端全面改版，無單一規劃主軸，屬真實方向轉換。</td>
+        <td></td>
+      </tr>
+      <tr data-drift="hr">
+        <td><b>人資考勤系統</b><div class="repo">Harry（已離職）</div></td>
+        <td><div class="balance" data-tip="符合度 40／100（自動統計＋人工校準）"><div class="beam"><i class="l" style="width:30.0%"></i><i class="r" style="width:20.0%"></i><span class="pivot"></span></div><div class="axis"><span>不符合</span><span>符合</span></div></div></td>
+        <td class="kw">打卡核心、後端架構、文件</td>
+        <td class="kw">申請流程、移除、修正</td>
+        <td data-edit="drift-hr">規劃為完整人資考勤系統，實際僅完成前端、後期發散到申請流程後中止，規劃與交付落差大。</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>使用方式</h2>
+  <p class="h2-note">兩步驟即可完成判讀。</p>
+  <table>
+    <thead><tr><th style="width:80px">步驟</th><th>動作</th></tr></thead>
+    <tbody>
+      <tr><td>一</td><td>由上而下看天秤與「系統解讀」：往左沉的系統先讀解讀，判斷偏離是假訊號（規格驅動、接手換人、樣本太小）還是真的規劃失準；判斷結果寫進備註欄。</td></tr>
+      <tr><td>二</td><td>判定為「規劃失準」的系統，作為該負責人「大局觀」評分的扣分參考（在綜合項目評分分頁填寫）；假訊號則不影響個人評分。</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== 綜合項目評分 ==================== -->
+<section class="tab" id="t-manual">
+  <h2>綜合項目評分（請直接填寫）</h2>
+  <p class="h2-note">
+    四個維度各五分（可填 0 至 5，支援 0.5）：大局觀、邏輯、積極主動性、團隊參與度。
+    填寫後自動儲存並即時更新下方總排名；總分為技術分（25）加綜合項目評分（20），滿分四十五。
+  </p>
+  <table id="manualTable">
+    <thead>
+      <tr>
+        <th style="width:200px">人員（點擊展開備註）</th>
+        <th class="num" style="width:100px">大局觀</th>
+        <th class="num" style="width:100px">邏輯</th>
+        <th class="num" style="width:110px">積極主動性</th>
+        <th class="num" style="width:110px">團隊參與度</th>
+        <th class="num" style="width:90px">小計／20</th>
+      </tr>
+    </thead>
+    <tbody><!-- 由程式產生 --></tbody>
+  </table>
+
+  <h2>總排名（技術分＋綜合項目評分，即時計算）</h2>
+  <p class="h2-note">「位移」欄顯示相對於純技術排名的變化；綜合項目評分未填時以 0 計。</p>
+  <table id="compositeTable">
+    <thead>
+      <tr>
+        <th style="width:60px">排名</th>
+        <th style="width:90px">人員</th>
+        <th class="num" style="width:100px">技術分／25</th>
+        <th class="num" style="width:130px">綜合項目評分／20</th>
+        <th class="num" style="width:90px">總分／45</th>
+        <th style="width:90px">位移</th>
+        <th>目前配置</th>
+      </tr>
+    </thead>
+    <tbody><!-- 由程式產生 --></tbody>
+  </table>
+</section>
+
+<!-- ==================== 公司系統架構 ==================== -->
+<section class="tab" id="t-roadmap">
+  <h2>公司系統架構（簡明版）</h2>
+  <p class="h2-note">
+    核心原則：每筆共用資料、每項共用能力，全公司只有一個權威來源；下層系統一律「取用」、不得自建副本。
+    由上而下：權威來源與外部輸入、共用能力層、業務系統層（只組裝、不重造）、產出物。
+    紅色虛線框為權威來源缺位。詳細版架構圖另案製作。
+  </p>
+  <div class="arch">
+      <svg id="archSvg" class="archmap" viewBox="0 0 1180 756" width="100%" role="img" aria-label="公司系統架構圖">
+      <g font-family="PingFang TC,Noto Sans TC,sans-serif">
+      <rect x="16" y="76" width="1152" height="110" rx="10" fill="hsl(215,42%,97%)" stroke="hsl(215,42%,86%)"/>
+      <rect x="16" y="230" width="1152" height="112" rx="10" fill="hsl(178,42%,96%)" stroke="hsl(178,42%,82%)"/>
+      <rect x="16" y="384" width="1152" height="202" rx="10" fill="hsl(262,32%,97%)" stroke="hsl(262,32%,87%)"/>
+      <rect x="16" y="596" width="1152" height="112" rx="10" fill="hsl(35,52%,96%)" stroke="hsl(35,52%,84%)"/>
+      <g class="an" data-node="sso" data-tip="EIP 轉型目標：登入一次進入下方所有內部系統；因資料在 NAS、微軟帳戶建置唯一入口有難度，2026-01 月初停擺" style="cursor:pointer">
+      <rect x="16" y="14" width="1148" height="48" rx="8" fill="hsl(8,48%,95%)" stroke="hsl(8,48%,46%)" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <text x="590" y="35" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(8,48%,38%)">企業入口（單一登入）——規劃停擺</text>
+      <text x="590" y="53" text-anchor="middle" font-size="11" fill="#8a929b">目標：登入一次進入下方所有內部系統（2026-01 月初停擺：資料在 NAS、微軟帳戶建置困難）</text>
+      </g>
+      <text x="30" y="94" font-size="13" font-weight="700" fill="#5a626b">權威資料來源<tspan font-size="11" font-weight="400" fill="#8a929b">　每筆共用資料只有一個主人</tspan></text>
+      <text x="30" y="248" font-size="13" font-weight="700" fill="#5a626b">共用能力層<tspan font-size="11" font-weight="400" fill="#8a929b">　建一次、全公司呼叫</tspan></text>
+      <text x="30" y="402" font-size="13" font-weight="700" fill="#5a626b">業務系統層<tspan font-size="11" font-weight="400" fill="#8a929b">　只組裝、不重造</tspan></text>
+      <text x="30" y="614" font-size="13" font-weight="700" fill="#5a626b">產出物<tspan font-size="11" font-weight="400" fill="#8a929b">　交付客戶與內部</tspan></text>
+      <path class="ae" data-from="eip" data-to="pms" d="M 364.5 172.0 C 364.5 295.0, 132.5 295.0, 132.5 418.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="rfp" data-to="km" d="M 596.5 172.0 C 596.5 218.0, 745.0 218.0, 745.0 264.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="socsrc" data-to="soc" d="M 828.5 172.0 C 828.5 295.0, 364.5 295.0, 364.5 418.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="scan" data-to="vuln" d="M 1060.5 172.0 C 1060.5 295.0, 828.5 295.0, 828.5 418.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="llm" data-to="agent" d="M 165.0 264.0 C 165.0 296.0, 455.0 296.0, 455.0 328.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="llm" data-to="km" d="M 165.0 264.0 C 165.0 296.0, 745.0 296.0, 745.0 328.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="agent" data-to="soc" d="M 455.0 328.0 C 455.0 373.0, 364.5 373.0, 364.5 418.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="km" data-to="o_prop" d="M 745.0 328.0 C 745.0 479.0, 132.5 479.0, 132.5 630.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="soc" data-to="o_soc" d="M 364.5 482.0 C 364.5 556.0, 364.5 556.0, 364.5 630.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="vuln" data-to="o_vuln" d="M 828.5 482.0 C 828.5 556.0, 596.5 556.0, 596.5 630.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="ssc" data-to="o_ssc" d="M 1060.5 482.0 C 1060.5 556.0, 828.5 556.0, 828.5 630.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="grs" data-to="o_rep" d="M 1035.0 328.0 C 1035.0 479.0, 1060.5 479.0, 1060.5 630.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="hr" data-to="pms" data-tip="缺位：員工與部門資料應由人資系統供應，現暫由 EIP 代理" d="M 132.5 172.0 C 132.5 295.0, 132.5 295.0, 132.5 418.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
+      <path class="ae" data-from="hr" data-to="isms" data-tip="缺位：資安大師的人員名單應由人資系統供應，現各自維護" d="M 132.5 172.0 C 132.5 295.0, 596.5 295.0, 596.5 418.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
+      <path class="ae" data-from="hr" data-to="learn" data-tip="缺位：受測人員名單應由人資系統供應，現各自維護" d="M 132.5 172.0 C 132.5 340.0, 364.5 340.0, 364.5 508.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
+      <path class="ae" data-from="eip" data-to="hr" data-tip="退場過渡：EIP 廢除前，員工與差勤資料的代理角色須交棒給人資系統" d="M 364.5 108.0 C 364.5 140.0, 132.5 140.0, 132.5 172.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
+      <path class="ae" data-from="pms" data-to="km" data-tip="應介接：建議書的履約實績章節應自專案管理系統取得，現為人工整理" d="M 132.5 418.0 C 132.5 373.0, 745.0 373.0, 745.0 328.0" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
+      <path class="ae" data-from="pms" data-to="web" data-tip="建議介接：官網的服務與實績內容應引用專案管理系統資料，避免兩邊各自維護導致數據打架" d="M 132.5 482.0 C 132.5 495.0, 596.5 495.0, 596.5 508.0" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
+      <path class="ae" data-from="vuln" data-to="grs" data-tip="應介接：弱點與複測報告應改由生成式報告引擎排版輸出，現為弱掃平台自行輸出" d="M 828.5 418.0 C 828.5 373.0, 1035.0 373.0, 1035.0 328.0" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
+      <path class="ae" data-from="ssc" data-to="grs" data-tip="應介接：演練報告應改由生成式報告引擎排版輸出，現為社交工程系統自行輸出" d="M 1060.5 418.0 C 1060.5 373.0, 1035.0 373.0, 1035.0 328.0" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
+      <path class="ae" data-from="clinic" data-to="grs" data-tip="應介接：健診系統重啟時，報告輸出直接複用生成式報告引擎，不另建" d="M 828.5 508.0 C 828.5 418.0, 1035.0 418.0, 1035.0 328.0" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
+      <path class="ae" data-from="isms" data-to="grs" data-tip="應介接：稽核與風險評估報告模版對接生成式報告引擎，不自建" d="M 596.5 418.0 C 596.5 373.0, 1035.0 373.0, 1035.0 328.0" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
+      <path class="ae" data-from="isms" data-to="vuln" data-tip="資安三平台整合（BCCSONE 藍圖）：統一資產清冊 API 供掃描目標對應；弱點同步整合資料庫、轉風險評分" d="M 699 450 L 726 450" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
+      <path class="ae" data-from="isms" data-to="soc" data-tip="資安三平台整合（BCCSONE 藍圖）：監控端點對應統一資產清冊；安全事件摘要同步整合資料庫、匯入風險評鑑" d="M 494 450 L 467 450" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
+      <g class="an" data-node="hr" data-tip="員工、部門、證照的權威來源；停擺中，暫由 EIP 代理" style="cursor:pointer">
+      <rect x="30" y="108" width="205" height="64" rx="8" fill="hsl(8,48%,95%)" stroke="hsl(8,48%,46%)" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <text x="132.5" y="135" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(8,48%,38%)">人資系統</text>
+      <text x="132.5" y="155" text-anchor="middle" font-size="11" fill="#8a929b">權威來源缺位（停擺）</text>
+      </g>
+      <g class="an" data-node="eip" data-tip="VB.NET 舊系統將廢除：商機與訂單已移入專案管理系統、差勤移入人資桶；費用與員工資料暫由其代理至退場" style="cursor:pointer">
+      <rect x="262" y="108" width="205" height="64" rx="8" fill="hsl(35,52%,94%)" stroke="hsl(35,52%,44%)" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <text x="364.5" y="135" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(35,52%,32%)">EIP 企業入口</text>
+      <text x="364.5" y="155" text-anchor="middle" font-size="11" fill="#8a929b">待廢除（退場中）</text>
+      </g>
+      <g class="an" data-node="rfp" data-tip="政府標案需求說明書，餵入文件知識庫" style="cursor:pointer">
+      <rect x="494" y="108" width="205" height="64" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
+      <text x="596.5" y="135" text-anchor="middle" font-size="13.5" font-weight="700" fill="#2b3036">標案需求文件</text>
+      <text x="596.5" y="155" text-anchor="middle" font-size="11" fill="#8a929b">外部輸入</text>
+      </g>
+      <g class="an" data-node="socsrc" data-tip="事件與告警，餵入戰情中心" style="cursor:pointer">
+      <rect x="726" y="108" width="205" height="64" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
+      <text x="828.5" y="135" text-anchor="middle" font-size="13.5" font-weight="700" fill="#2b3036">SOC 事件資料</text>
+      <text x="828.5" y="155" text-anchor="middle" font-size="11" fill="#8a929b">監控告警源</text>
+      </g>
+      <g class="an" data-node="scan" data-tip="掃描結果餵入弱點管理平台" style="cursor:pointer">
+      <rect x="958" y="108" width="205" height="64" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
+      <text x="1060.5" y="135" text-anchor="middle" font-size="13.5" font-weight="700" fill="#2b3036">外部掃描工具</text>
+      <text x="1060.5" y="155" text-anchor="middle" font-size="11" fill="#8a929b">弱點資料源</text>
+      </g>
+      <g class="an" data-node="llm" data-tip="全公司唯一的模型推論出口" style="cursor:pointer">
+      <rect x="40" y="264" width="250" height="64" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
+      <text x="165.0" y="291" text-anchor="middle" font-size="13.5" font-weight="700" fill="#2b3036">模型推論平台</text>
+      <text x="165.0" y="311" text-anchor="middle" font-size="11" fill="#8a929b">Jsnn</text>
+      </g>
+      <g class="an" data-node="agent" data-tip="智慧代理統一入口" style="cursor:pointer">
+      <rect x="330" y="264" width="250" height="64" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
+      <text x="455.0" y="291" text-anchor="middle" font-size="13.5" font-weight="700" fill="#2b3036">代理端點服務</text>
+      <text x="455.0" y="311" text-anchor="middle" font-size="11" fill="#8a929b">Jsnn</text>
+      </g>
+      <g class="an" data-node="km" data-tip="知識與文件檢索的唯一來源" style="cursor:pointer">
+      <rect x="620" y="264" width="250" height="64" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
+      <text x="745.0" y="291" text-anchor="middle" font-size="13.5" font-weight="700" fill="#2b3036">文件知識庫系統</text>
+      <text x="745.0" y="311" text-anchor="middle" font-size="11" fill="#8a929b">Wiwi</text>
+      </g>
+      <g class="an" data-node="grs" data-tip="報告排版輸出的唯一引擎" style="cursor:pointer">
+      <rect x="910" y="264" width="250" height="64" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
+      <text x="1035.0" y="291" text-anchor="middle" font-size="13.5" font-weight="700" fill="#2b3036">生成式報告系統</text>
+      <text x="1035.0" y="311" text-anchor="middle" font-size="11" fill="#8a929b">Ivan（Wiwi 交接）</text>
+      </g>
+      <g class="an" data-node="pms" data-tip="專案與履約實績的權威來源；已承接 EIP 的商機與訂單管理" style="cursor:pointer">
+      <rect x="30" y="418" width="205" height="64" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
+      <text x="132.5" y="445" text-anchor="middle" font-size="13.5" font-weight="700" fill="#2b3036">專案管理系統</text>
+      <text x="132.5" y="465" text-anchor="middle" font-size="11" fill="#8a929b">Aria、Ren</text>
+      </g>
+      <g class="an" data-node="soc" data-tip="事件監控與應變" style="cursor:pointer">
+      <rect x="262" y="418" width="205" height="64" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
+      <text x="364.5" y="445" text-anchor="middle" font-size="13.5" font-weight="700" fill="#2b3036">advMDR 戰情中心</text>
+      <text x="364.5" y="465" text-anchor="middle" font-size="11" fill="#8a929b">Jsnn、Nick</text>
+      </g>
+      <g class="an" data-node="isms" data-tip="資安管理制度（BCCS One）。統一資產清冊與風險評鑑引擎的權威來源，規劃輸出共用 API 供弱掃與戰情中心對接；前端完成九成，後端 API 與資料庫為上線最大阻礙" style="cursor:pointer">
+      <rect x="494" y="418" width="205" height="64" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
+      <text x="596.5" y="445" text-anchor="middle" font-size="13.5" font-weight="700" fill="#2b3036">資安大師（BCCS One）</text>
+      <text x="596.5" y="465" text-anchor="middle" font-size="11" fill="#8a929b">Weiyao、Ted</text>
+      </g>
+      <g class="an" data-node="vuln" data-tip="掃描與複測管理" style="cursor:pointer">
+      <rect x="726" y="418" width="205" height="64" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
+      <text x="828.5" y="445" text-anchor="middle" font-size="13.5" font-weight="700" fill="#2b3036">弱點管理平台</text>
+      <text x="828.5" y="465" text-anchor="middle" font-size="11" fill="#8a929b">Dylan</text>
+      </g>
+      <g class="an" data-node="ssc" data-tip="演練執行" style="cursor:pointer">
+      <rect x="958" y="418" width="205" height="64" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
+      <text x="1060.5" y="445" text-anchor="middle" font-size="13.5" font-weight="700" fill="#2b3036">社交工程系統</text>
+      <text x="1060.5" y="465" text-anchor="middle" font-size="11" fill="#8a929b">Ivan</text>
+      </g>
+      <g class="an" data-node="learn" data-tip="教育訓練評量" style="cursor:pointer">
+      <rect x="262" y="508" width="205" height="64" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
+      <text x="364.5" y="535" text-anchor="middle" font-size="13.5" font-weight="700" fill="#2b3036">線上評量系統</text>
+      <text x="364.5" y="555" text-anchor="middle" font-size="11" fill="#8a929b">Zane</text>
+      </g>
+      <g class="an" data-node="web" data-tip="對外形象與服務入口" style="cursor:pointer">
+      <rect x="494" y="508" width="205" height="64" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
+      <text x="596.5" y="535" text-anchor="middle" font-size="13.5" font-weight="700" fill="#2b3036">公司官網</text>
+      <text x="596.5" y="555" text-anchor="middle" font-size="11" fill="#8a929b">Anne（名義）</text>
+      </g>
+      <g class="an" data-node="clinic" data-tip="重啟時報告輸出應複用生成式報告引擎" style="cursor:pointer">
+      <rect x="726" y="508" width="205" height="64" rx="8" fill="hsl(8,48%,95%)" stroke="hsl(8,48%,46%)" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <text x="828.5" y="535" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(8,48%,38%)">資安健診系統</text>
+      <text x="828.5" y="555" text-anchor="middle" font-size="11" fill="#8a929b">停擺</text>
+      </g>
+      <g class="an" data-node="o_prop" style="cursor:pointer">
+      <rect x="30" y="630" width="205" height="64" rx="8" fill="hsl(35,52%,94%)" stroke="hsl(35,52%,44%)" stroke-width="1.5"/>
+      <text x="132.5" y="657" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(35,52%,32%)">服務建議書</text>
+      <text x="132.5" y="677" text-anchor="middle" font-size="11" fill="#8a929b">知識庫＋專案實績</text>
+      </g>
+      <g class="an" data-node="o_soc" style="cursor:pointer">
+      <rect x="262" y="630" width="205" height="64" rx="8" fill="hsl(35,52%,94%)" stroke="hsl(35,52%,44%)" stroke-width="1.5"/>
+      <text x="364.5" y="657" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(35,52%,32%)">戰情與事件報告</text>
+      <text x="364.5" y="677" text-anchor="middle" font-size="11" fill="#8a929b">戰情中心</text>
+      </g>
+      <g class="an" data-node="o_vuln" style="cursor:pointer">
+      <rect x="494" y="630" width="205" height="64" rx="8" fill="hsl(35,52%,94%)" stroke="hsl(35,52%,44%)" stroke-width="1.5"/>
+      <text x="596.5" y="657" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(35,52%,32%)">弱點與複測報告</text>
+      <text x="596.5" y="677" text-anchor="middle" font-size="11" fill="#8a929b">弱點管理平台</text>
+      </g>
+      <g class="an" data-node="o_ssc" style="cursor:pointer">
+      <rect x="726" y="630" width="205" height="64" rx="8" fill="hsl(35,52%,94%)" stroke="hsl(35,52%,44%)" stroke-width="1.5"/>
+      <text x="828.5" y="657" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(35,52%,32%)">演練報告</text>
+      <text x="828.5" y="677" text-anchor="middle" font-size="11" fill="#8a929b">社交工程系統</text>
+      </g>
+      <g class="an" data-node="o_rep" style="cursor:pointer">
+      <rect x="958" y="630" width="205" height="64" rx="8" fill="hsl(35,52%,94%)" stroke="hsl(35,52%,44%)" stroke-width="1.5"/>
+      <text x="1060.5" y="657" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(35,52%,32%)">客製化報告書</text>
+      <text x="1060.5" y="677" text-anchor="middle" font-size="11" fill="#8a929b">生成式報告引擎</text>
+      </g>
+      <g font-size="11.5" fill="#5a626b">
+      <line x1="30" y1="734" x2="70" y2="734" stroke="hsl(178,42%,40%)" stroke-width="2"/><text x="78" y="738">現行介接</text>
+      <line x1="170" y1="734" x2="210" y2="734" stroke="hsl(35,52%,48%)" stroke-width="2" stroke-dasharray="6,4"/><text x="218" y="738">應介接、尚未做（重複開發風險）</text>
+      <line x1="450" y1="734" x2="490" y2="734" stroke="hsl(8,48%,50%)" stroke-width="2" stroke-dasharray="3,4"/><text x="498" y="738">權威來源缺位（應由此供應）</text>
+      <text x="760" y="738" fill="#8a929b">橙虛框＝待廢除、紅虛框＝停擺；滑鼠移到任一系統會亮出上下游</text>
+      </g></g></svg>
+  </div>
+
+  <p class="h2-note" style="margin-top:10px;">需要完整資料流、知識管理層內部結構與各系統進行中工作：<a href="#" data-goto="t-archdetail" style="color:var(--c-blue)">開啟詳細版（漢昕軟體系統架構）</a></p>
+
+  <h2>共用能力歸屬原則（避免重複開發）</h2>
+  <p class="h2-note">新系統立案前先查這張表：要用的資料或能力若已有權威來源，一律介接取用，不得自建。</p>
+  <table>
+    <thead><tr><th style="width:150px">共用資料／能力</th><th style="width:190px">權威來源</th><th>應取用的系統</th><th>現況落差</th></tr></thead>
+    <tbody>
+      <tr><td>員工、部門、證照</td><td>人資系統（停擺，暫由 EIP 代理）</td><td>專案管理、資安大師、線上評量、官網</td><td>權威來源缺位，各系統各自維護人員名單；EIP 待廢除，代理角色須在退場前交棒</td></tr>
+      <tr><td>商機與訂單管理</td><td>專案管理系統（已自 EIP 承接）</td><td>—</td><td>已完成搬遷，EIP 端對應功能待下線</td></tr>
+      <tr><td>打卡差勤</td><td>人資考勤系統（人資桶，停擺）</td><td>—</td><td>自 EIP 劃出但接收端停擺，差勤功能懸空</td></tr>
+      <tr><td>單一登入（進入各內部系統）</td><td>企業入口（EIP 轉型目標，停擺）</td><td>全部內部系統</td><td>資料在 NAS、微軟帳戶建置唯一入口有難度，停擺中</td></tr>
+      <tr><td>專案與履約實績</td><td>專案管理系統</td><td>文件知識庫（建議書實績章節）、官網</td><td>尚未介接，建議書實績仍人工整理</td></tr>
+      <tr><td>模型推論</td><td>模型推論平台</td><td>戰情中心、文件知識庫、生成式報告</td><td>已集中，維持現狀即可</td></tr>
+      <tr><td>智慧代理</td><td>代理端點服務</td><td>戰情中心（未來擴及各系統）</td><td>已集中，維持現狀即可</td></tr>
+      <tr><td>知識與文件檢索</td><td>文件知識庫系統</td><td>建議書產製、未來新系統</td><td>建置中</td></tr>
+      <tr><td>統一資產清冊</td><td>資安大師 BCCS One（資產模組已完成）</td><td>弱點管理（掃描目標）、戰情中心（監控端點）</td><td>BCCSONE 藍圖規劃中，共用 API 未建</td></tr>
+      <tr><td>風險評鑑引擎</td><td>資安大師 BCCS One（風險核心已完成）</td><td>弱點管理、戰情中心（弱點與事件轉風險評分）</td><td>兩平台僅嚴重度分級，未轉風險評分</td></tr>
+      <tr><td>儀表板元件引擎</td><td>戰情中心（可拖曳元件布局）</td><td>各平台自訂資料來源</td><td>BCCSONE 藍圖規劃中</td></tr>
+      <tr><td>報告排版輸出</td><td>生成式報告系統</td><td>弱點管理、社交工程、資安健診（重啟時）</td><td>各系統各自輸出，未複用——目前最大的重複開發風險</td></tr>
+    </tbody>
+  </table>
+
+  <h2>各系統近期路線</h2>
+  <p class="h2-note">路線內容由分支名稱、提交主題與現行配置推導；標示「待確認」者代表版本庫中找不到對應證據，需由負責人補充。</p>
+  <div class="road-grid">
+    <div class="road handover">
+      <h3>專案管理系統</h3>
+      <div class="meta">Aria 主導、Ren 輔助除錯｜交接中｜2026-04-30 已上線</div>
+      <ul data-edit="road-pms">
+        <li>進行中功能線：網頁教學導覽、標註功能、介面統一、年度安全強化</li>
+        <li>上線後維護期，部署流程持續調整</li>
+        <li>路線上的關鍵不是功能，而是把提交主力從 Ren 轉移到 Aria</li>
+      </ul>
+    </div>
+    <div class="road handover">
+      <h3>advMDR 戰情中心</h3>
+      <div class="meta">Jsnn 開發、Nick 接手｜交接中</div>
+      <ul data-edit="road-soc">
+        <li>正式環境部署管線建置中（專屬功能分支進行）</li>
+        <li>開發線領先主線兩個月，需排定合併與發版節奏</li>
+        <li>BCCSONE 藍圖：安全事件摘要同步整合資料庫、匯入 BCCS One 風險評鑑；可拖曳元件引擎列為共用能力</li>
+        <li>Nick 的接手範圍與里程碑目前無文件可查，待確認</li>
+      </ul>
+    </div>
+    <div class="road">
+      <h3>模型推論平台與代理端點服務</h3>
+      <div class="meta">Jsnn 一人雙線｜開發中</div>
+      <ul data-edit="road-llm">
+        <li>推論平台近期重心：評測流程與監控儀表板</li>
+        <li>代理端點作為戰情中心的上游能力，預設組與可觀測性建置中</li>
+        <li>兩套服務皆單線單人，無備援人力，建議納入 Nick 交接範圍評估</li>
+      </ul>
+    </div>
+    <div class="road">
+      <h3>資安大師（BCCS One）</h3>
+      <div class="meta">Weiyao 需求與前端、Ted 後端｜開發中｜資安三平台整合的核心</div>
+      <ul data-edit="road-isms">
+        <li>後端進行中：系統參數設定、資產區域欄位調整、條文庫</li>
+        <li>BCCSONE 藍圖定位：統一資產清冊與風險評鑑引擎的權威來源，輸出共用 API 供弱掃與戰情中心對接</li>
+        <li>前端完成九成，後端 API 與資料庫為上線最大阻礙</li>
+        <li>雲端另存在重製版本庫，與內部主線的關係需要明確決定：擇一或併軌</li>
+      </ul>
+    </div>
+    <div class="road">
+      <h3>線上評量系統</h3>
+      <div class="meta">Zane 訓練用｜開發中</div>
+      <ul data-edit="road-learn">
+        <li>規格階段已完成，目前進入實作：租戶管理、應試者流程、後台清單</li>
+        <li>定位是流程訓練；建議設定可驗收的小型交付目標，讓訓練成果可量化</li>
+      </ul>
+    </div>
+    <div class="road maint">
+      <h3>生成式報告系統與社交工程系統</h3>
+      <div class="meta">Ivan 維運｜維運中</div>
+      <ul data-edit="road-ivan">
+        <li>生成式報告：輸出品質細修中（表格、字型、目錄）；第二階段範圍尚無規劃文件，待確認</li>
+        <li>社交工程系統持續上線營運，新功能與修補由 Ivan 單人吸收</li>
+      </ul>
+    </div>
+    <div class="road">
+      <h3>弱點管理平台</h3>
+      <div class="meta">Dylan 獨力開發｜開發中｜2026-06-11 補列配置</div>
+      <ul data-edit="road-vuln">
+        <li>整合外部掃描工具的弱點管理流程，近期新增複測流程</li>
+        <li>三線分支制度已就位</li>
+        <li>BCCSONE 藍圖：掃描目標對應統一資產清冊、弱點同步整合資料庫轉風險評分、報告對接生成式引擎</li>
+        <li>待補：需求來源、驗收標準與上線時程文件</li>
+      </ul>
+    </div>
+    <div class="road">
+      <h3>文件知識庫系統</h3>
+      <div class="meta">Wiwi 獨力開發｜開發中｜2026-06-11 補列配置</div>
+      <ul data-edit="road-rag">
+        <li>目標：從政府標案需求文件自動生成服務建議書，近期擴及標準作業程序模組</li>
+        <li>與公司資料治理藍圖的知識管理層直接相關，建議掛進權威資料來源規劃，避免再建資料孤島</li>
+      </ul>
+    </div>
+    <div class="road stalled">
+      <h3>企業入口轉型（停擺）</h3>
+      <div class="meta">EIP 廢除計畫｜單一登入目標停擺</div>
+      <ul data-edit="road-sso">
+        <li>EIP 舊系統（VB.NET）確定廢除：商機與訂單已移入專案管理系統、打卡差勤劃入人資桶</li>
+        <li>轉型目標：企業入口＝單一登入，登入一次進入公司內部各系統（2026-01 月初即停擺）</li>
+        <li>停擺原因：資料都在 NAS 上、以微軟帳戶建置唯一入口有難度</li>
+        <li>退場前必須處理：費用與員工資料的代理角色要交棒（人資系統），否則專案管理系統的介接會懸空</li>
+      </ul>
+    </div>
+    <div class="road stalled">
+      <h3>人資考勤系統（停擺）</h3>
+      <div class="meta">原 Harry，已離職｜停擺七十二日</div>
+      <ul data-edit="road-hr">
+        <li>僅有前端、無後端；依資料治理藍圖，人員資料的權威來源應是人資系統，重啟前應先定位資料源</li>
+        <li>建議決策：重啟（指派接手人）或正式封存，不要維持懸置</li>
+      </ul>
+    </div>
+    <div class="road stalled">
+      <h3>資安健診系統（停擺）</h3>
+      <div class="meta">原 Wiwi｜停擺四個月</div>
+      <ul data-edit="road-clinic">
+        <li>末期提交主題已是文件與交接，實質中止</li>
+        <li>健診報告生成與生成式報告系統能力重疊，重啟時應評估直接複用，而非獨立開發</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 風險建議 ==================== -->
+<section class="tab" id="t-risks">
+  <h2>風險與管理建議</h2>
+
+  <div class="risk">
+    <h3>單點依賴：Jsnn 一人扛三套基礎平台</h3>
+    <ul data-edit="risk-jsnn">
+      <li>戰情中心、模型推論平台、代理端點服務的提交幾乎全數出自一人</li>
+      <li>其中兩套是其他系統的上游依賴</li>
+      <li>Nick 的交接目前僅觸及戰情中心（佔比約一成），另兩套完全沒有第二人</li>
+      <li>建議：交接範圍從「戰情中心」擴大為「Jsnn 名下全部三套」，以「Nick 能獨立發版」為驗收標準</li>
+    </ul>
+  </div>
+
+  <div class="risk">
+    <h3>配置與實況不符：Anne 名義維護官網，但查無任何產出</h3>
+    <ul data-edit="risk-anne">
+      <li>官網最後提交是 2026-05-26 由 Aria 送出</li>
+      <li>Anne 在兩個版本庫來源的提交數與內部平台活動量皆為零</li>
+      <li>需釐清：工作存在於版本控制之外（直接改線上或站外工具），或實際尚未開始</li>
+      <li>前者是流程問題、後者是配置問題，處置方式完全不同</li>
+    </ul>
+  </div>
+
+  <div class="risk info">
+    <h3>已處置：兩套清單外系統已補列配置（2026-06-11）</h3>
+    <ul data-edit="risk-shadow">
+      <li>弱點管理平台（Dylan）與文件知識庫系統（Wiwi）已正式納入配置</li>
+      <li>殘留事項：兩案的需求來源、驗收標準與上線時程文件仍待補</li>
+      <li>建議指定驗收人，並要求負責人補上規劃文件</li>
+    </ul>
+  </div>
+
+  <div class="risk warn">
+    <h3>交接深度不足：兩大系統的提交主力仍是原開發者</h3>
+    <ul data-edit="risk-handover">
+      <li>專案管理系統：近四百筆提交中 Aria 僅五筆（Ren 三百九十三筆）</li>
+      <li>戰情中心：近五十筆中 Nick 僅六筆</li>
+      <li>名義上已換手，實際產出結構未變</li>
+      <li>建議：為兩位接手人各訂一個「獨立完成並上線」的指標性任務作為交接驗收</li>
+    </ul>
+  </div>
+
+  <div class="risk warn">
+    <h3>停擺資產未處置：人資考勤、資安健診、企業入口轉型三案懸置中</h3>
+    <ul data-edit="risk-stalled">
+      <li>人資考勤停擺七十二日、資安健診停擺四個月，無接手人也無封存決定</li>
+      <li>企業入口（單一登入）轉型因 NAS 資料與微軟帳戶建置難度停擺；EIP 已確定廢除，但差勤接收端（人資桶）同樣停擺，形成兩頭懸空</li>
+      <li>依資料治理藍圖，人資系統是人員資料的權威來源，懸置會卡住資料治理路線</li>
+      <li>建議給出明確決策：指派接手或正式封存；EIP 退場時程須與人資桶重啟綁定排程</li>
+    </ul>
+  </div>
+
+  <div class="risk warn">
+    <h3>退場依賴：EIP 廢除前，下游介接須先交棒</h3>
+    <ul data-edit="risk-eip">
+      <li>專案管理系統目前仍從 EIP 取用費用與員工資料（單向唯讀）</li>
+      <li>EIP 廢除後這條介接會斷，必須在退場前把員工資料權威來源移到人資系統</li>
+      <li>商機與訂單已完成搬遷，建議確認 EIP 端對應功能下線，避免兩邊並行又出現雙重維護</li>
+    </ul>
+  </div>
+
+  <div class="risk info">
+    <h3>提交身份治理：至少四種不可歸戶的提交名義</h3>
+    <ul data-edit="risk-identity">
+      <li>共用工具帳號：線上評量系統全部五十筆</li>
+      <li>個人信箱與公司信箱混用：Weiyao 三種名義</li>
+      <li>離職者機器名稱：人資考勤系統</li>
+      <li>影響產出統計準確度與日後稽核；建議統一提交者姓名與信箱格式，停用共用帳號提交</li>
+    </ul>
+  </div>
+
+  <div class="risk info">
+    <h3>版本庫雙軌：資安大師存在內外兩條線</h3>
+    <ul data-edit="risk-isms">
+      <li>內部平台是現行開發主線，雲端另有規格驅動開發的重製版本庫</li>
+      <li>若重製版仍在推進，等於同一系統兩組真相</li>
+      <li>建議明確宣告主線並封存另一條</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ==================== 漢昕軟體開發定位 ==================== -->
+<section class="tab" id="t-position">
+  <h2 data-edit="pos-1">為什麼需要先定位</h2>
+  <p class="h2-note" data-edit="pos-19">起點是公司對軟體開發團隊（與其未來）的定位期待，而不是用人員特質反推公司該長什麼樣；人員特質放在鏈條最後，做適才適性的歸位。</p>
+  <div class="arch" style="padding:14px 18px;">
+    <svg viewBox="0 0 980 100" style="max-width:980px; display:block; margin:0 auto" width="100%" role="img" aria-label="定位推導鏈">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a929b"/></marker>
+      </defs>
+      <g font-family="PingFang TC,Noto Sans TC,sans-serif">
+        <rect x="8" y="20" width="172" height="60" rx="8" fill="hsl(178,42%,95%)" stroke="hsl(178,42%,34%)"/>
+        <text x="94" y="44" text-anchor="middle" font-size="14" font-weight="700" fill="hsl(178,42%,28%)">公司定位</text>
+        <text x="94" y="64" text-anchor="middle" font-size="11" fill="#5a626b">對開發團隊的期待</text>
+        <rect x="205" y="20" width="172" height="60" rx="8" fill="hsl(215,42%,95%)" stroke="hsl(215,42%,44%)"/>
+        <text x="291" y="44" text-anchor="middle" font-size="14" font-weight="700" fill="hsl(215,42%,36%)">開發模式</text>
+        <text x="291" y="64" text-anchor="middle" font-size="11" fill="#5a626b">一條龍或權責分工</text>
+        <rect x="402" y="20" width="172" height="60" rx="8" fill="hsl(262,32%,95%)" stroke="hsl(262,32%,50%)"/>
+        <text x="488" y="44" text-anchor="middle" font-size="14" font-weight="700" fill="hsl(262,32%,42%)">開發速度</text>
+        <text x="488" y="64" text-anchor="middle" font-size="11" fill="#5a626b">模式決定交付節奏</text>
+        <rect x="599" y="20" width="172" height="60" rx="8" fill="hsl(35,52%,94%)" stroke="hsl(35,52%,44%)"/>
+        <text x="685" y="44" text-anchor="middle" font-size="14" font-weight="700" fill="hsl(35,52%,36%)">產品路線圖</text>
+        <text x="685" y="64" text-anchor="middle" font-size="11" fill="#5a626b">速度決定能排多滿</text>
+        <rect x="796" y="20" width="172" height="60" rx="8" fill="hsl(8,48%,95%)" stroke="hsl(8,48%,46%)"/>
+        <text x="882" y="44" text-anchor="middle" font-size="14" font-weight="700" fill="hsl(8,48%,38%)">適才適性</text>
+        <text x="882" y="64" text-anchor="middle" font-size="11" fill="#5a626b">人員依特質歸位</text>
+        <line x1="180" y1="50" x2="201" y2="50" stroke="#8a929b" stroke-width="2" marker-end="url(#ar)"/>
+        <line x1="377" y1="50" x2="398" y2="50" stroke="#8a929b" stroke-width="2" marker-end="url(#ar)"/>
+        <line x1="574" y1="50" x2="595" y2="50" stroke="#8a929b" stroke-width="2" marker-end="url(#ar)"/>
+        <line x1="771" y1="50" x2="792" y2="50" stroke="#8a929b" stroke-width="2" marker-end="url(#ar)"/>
+      </g>
+    </svg>
+  </div>
+
+  <details class="fold">
+    <summary><span data-edit="fold-m1">模式一：全人開發（從零到一、一條龍）<span class="fold-sub">前提假設：公司期望每位同仁都具備從零到一獨立開發系統的能力</span></span></summary>
+  <div class="arch" style="padding:14px 18px; margin-top:12px;">
+    <svg viewBox="0 0 980 372" style="max-width:980px; display:block; margin:0 auto" width="100%" role="img" aria-label="權限生命週期與角色涵蓋">
+      <g font-family="PingFang TC,Noto Sans TC,sans-serif">
+        <rect x="40" y="20" width="150" height="44" rx="7" fill="#f1f2f4" stroke="#b7bdc4"/>
+        <text x="115" y="47" text-anchor="middle" font-size="12.5" font-weight="700" fill="#2b3036">需求訪談</text>
+        <rect x="200" y="20" width="280" height="44" rx="7" fill="#f1f2f4" stroke="#b7bdc4"/>
+        <text x="340" y="47" text-anchor="middle" font-size="12.5" font-weight="700" fill="#2b3036">開發中</text>
+        <rect x="490" y="20" width="120" height="44" rx="7" fill="#f1f2f4" stroke="#b7bdc4"/>
+        <text x="550" y="47" text-anchor="middle" font-size="12.5" font-weight="700" fill="#2b3036">UAT</text>
+        <rect x="630" y="20" width="150" height="44" rx="7" fill="#f1f2f4" stroke="#b7bdc4"/>
+        <text x="705" y="47" text-anchor="middle" font-size="12.5" font-weight="700" fill="#2b3036">上線初期</text>
+        <rect x="790" y="20" width="170" height="44" rx="7" fill="#f1f2f4" stroke="#b7bdc4"/>
+        <text x="875" y="47" text-anchor="middle" font-size="12.5" font-weight="700" fill="#2b3036">上線穩定</text>
+        <line x1="620" y1="14" x2="620" y2="330" stroke="#2b3036" stroke-width="2" stroke-dasharray="2,3"/>
+        <text x="620" y="350" text-anchor="middle" font-size="12" font-weight="700" fill="#2b3036">上線／對客戶販售</text>
+
+        <text x="40" y="100" font-size="10.5" font-weight="700" fill="#8a929b">各角色涵蓋範圍（實線＝主責投入、虛線＝備援或保留）</text>
+
+        <rect x="40" y="112" width="570" height="30" rx="6" fill="hsl(178,42%,95%)" stroke="hsl(178,42%,34%)"/>
+        <text x="325" y="132" text-anchor="middle" font-size="11" font-weight="600" fill="hsl(178,42%,26%)">系統負責人：一條龍——需求、規格、開發、測試、環境建置全包（持有三區權限）</text>
+        <rect x="630" y="112" width="330" height="30" rx="6" fill="none" stroke="hsl(178,42%,34%)" stroke-dasharray="5,4"/>
+        <text x="795" y="132" text-anchor="middle" font-size="11" fill="hsl(178,42%,28%)">保留開發、測試區，持續出功能</text>
+
+        <rect x="40" y="152" width="740" height="30" rx="6" fill="hsl(215,42%,95%)" stroke="hsl(215,42%,44%)"/>
+        <text x="410" y="172" text-anchor="middle" font-size="11" font-weight="600" fill="hsl(215,42%,36%)">SA：需求訪談、規格設計、開發協同、UAT、上線初期跟進</text>
+
+        <rect x="40" y="192" width="570" height="30" rx="6" fill="hsl(35,52%,94%)" stroke="hsl(35,52%,44%)"/>
+        <text x="325" y="212" text-anchor="middle" font-size="11" font-weight="600" fill="hsl(35,52%,30%)">PJM：需求訪談、開發進度與協調、UAT 驗收主責</text>
+
+        <rect x="40" y="232" width="570" height="30" rx="6" fill="none" stroke="hsl(262,32%,50%)" stroke-dasharray="5,4"/>
+        <text x="325" y="252" text-anchor="middle" font-size="11" fill="hsl(262,32%,42%)">MIS：不介入，專心備援（開發端＋資安監控端）</text>
+        <rect x="630" y="232" width="330" height="30" rx="6" fill="hsl(262,32%,95%)" stroke="hsl(262,32%,50%)"/>
+        <text x="795" y="252" text-anchor="middle" font-size="11" font-weight="600" fill="hsl(262,32%,42%)">接管正式區權限，主責正式環境</text>
+
+        <rect x="630" y="272" width="330" height="30" rx="6" fill="hsl(8,48%,95%)" stroke="hsl(8,48%,46%)"/>
+        <text x="795" y="292" text-anchor="middle" font-size="11" font-weight="600" fill="hsl(8,48%,38%)">CSM：上線初期與穩定期——內部與外部客服</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="road-grid">
+    <div class="road">
+      <h3 data-edit="pos-3">人員配置邏輯</h3>
+      <ul data-edit="pos-4">
+        <li>具備從零到一能力者，負責新系統的完整生命週期：規劃、開發、環境建置、上線、初期維運</li>
+        <li>不具備（或尚未具備）從零開始能力者，定位為維運與接手——這不是降級，接手他人系統並讓它穩定上線是獨立且高價值的能力</li>
+        <li>每套系統永遠有一個明確的「唯一直接負責人」，不存在多頭馬車</li>
+        <li>本模式的本質是「執行權下放、仲裁權集中」：MIS 的環境執行權與系統內技術決策權下放給負責人；跨系統架構、共用能力仲裁、人的評估仍需集中把關、不可下放（跨系統架構、共用能力仲裁、人員評估）</li>
+      </ul>
+    </div>
+    <div class="road">
+      <h3 data-edit="pos-5">權限生命週期（本模式的關鍵配套）</h3>
+      <ul data-edit="pos-6">
+        <li>開發期（上線前）：系統負責人持有開發、測試、正式三區的完整環境權限，自己建、自己部、自己驗</li>
+        <li>上線後（對部門啟用、對客戶販售）：正式區權限收斂、移交 MIS 管理，負責人保留開發與測試區</li>
+        <li>MIS 在開發期不介入、專心當備援（開發端與資安監控端皆是），上線後才接管環境——雙方都省掉等待與互卡</li>
+      </ul>
+    </div>
+  </div>
+  </details>
+
+  <details class="fold">
+    <summary><span data-edit="fold-m2">模式二：權責分工<span class="fold-sub">前提假設：公司期望開發、測試、環境、維運的權責切分清楚</span></span></summary>
+  <div class="arch" style="padding:14px 18px; margin-top:12px;">
+    <svg viewBox="0 0 980 280" style="max-width:980px; display:block; margin:0 auto" width="100%" role="img" aria-label="權責分工結構">
+      <g font-family="PingFang TC,Noto Sans TC,sans-serif">
+        <rect x="24" y="16" width="148" height="68" rx="7" fill="hsl(178,42%,95%)" stroke="hsl(178,42%,34%)"/>
+        <text x="98" y="42" text-anchor="middle" font-size="12.5" font-weight="700" fill="hsl(178,42%,28%)">前期需求編列</text>
+        <text x="98" y="62" text-anchor="middle" font-size="10" fill="#5a626b">需求來源：行銷、內部部門</text>
+        <rect x="180" y="16" width="148" height="68" rx="7" fill="hsl(178,42%,95%)" stroke="hsl(178,42%,34%)"/>
+        <text x="254" y="38" text-anchor="middle" font-size="12.5" font-weight="700" fill="hsl(178,42%,28%)">需求確認</text>
+        <text x="254" y="56" text-anchor="middle" font-size="10" fill="#5a626b">SA＋開發確認需求與方向</text>
+        <text x="254" y="72" text-anchor="middle" font-size="10" fill="#5a626b">預先制定八成 UAT 條件</text>
+        <rect x="336" y="16" width="148" height="68" rx="7" fill="hsl(262,32%,95%)" stroke="hsl(262,32%,50%)"/>
+        <text x="410" y="42" text-anchor="middle" font-size="12.5" font-weight="700" fill="hsl(262,32%,42%)">環境建置編列</text>
+        <text x="410" y="62" text-anchor="middle" font-size="10" fill="#5a626b">MIS：環境、權限</text>
+        <rect x="492" y="16" width="148" height="68" rx="7" fill="hsl(215,42%,95%)" stroke="hsl(215,42%,44%)"/>
+        <text x="566" y="42" text-anchor="middle" font-size="12.5" font-weight="700" fill="hsl(215,42%,36%)">開發</text>
+        <text x="566" y="62" text-anchor="middle" font-size="10" fill="#5a626b">開發人員：寫與交付</text>
+        <rect x="648" y="16" width="148" height="68" rx="7" fill="hsl(215,42%,95%)" stroke="hsl(215,42%,44%)"/>
+        <text x="722" y="42" text-anchor="middle" font-size="12.5" font-weight="700" fill="hsl(215,42%,36%)">測試</text>
+        <text x="722" y="62" text-anchor="middle" font-size="10" fill="#5a626b">品質驗收、回歸把關</text>
+        <rect x="804" y="16" width="148" height="68" rx="7" fill="hsl(262,32%,95%)" stroke="hsl(262,32%,50%)"/>
+        <text x="878" y="42" text-anchor="middle" font-size="12.5" font-weight="700" fill="hsl(262,32%,42%)">驗收與維護編列</text>
+        <text x="878" y="62" text-anchor="middle" font-size="10" fill="#5a626b">MIS、維運</text>
+        <line x1="172" y1="50" x2="178" y2="50" stroke="#8a929b" stroke-width="1.6"/>
+        <line x1="328" y1="50" x2="334" y2="50" stroke="#8a929b" stroke-width="1.6"/>
+        <line x1="484" y1="50" x2="490" y2="50" stroke="#8a929b" stroke-width="1.6"/>
+        <line x1="640" y1="50" x2="646" y2="50" stroke="#8a929b" stroke-width="1.6"/>
+        <line x1="796" y1="50" x2="802" y2="50" stroke="#8a929b" stroke-width="1.6"/>
+
+        <text x="24" y="110" font-size="10.5" font-weight="700" fill="#8a929b">兩個橋樑角色的涵蓋範圍（依業界定義，職責不同、不可混為一談）</text>
+        <rect x="24" y="118" width="616" height="30" rx="6" fill="hsl(178,42%,95%)" stroke="hsl(178,42%,34%)"/>
+        <text x="332" y="138" text-anchor="middle" font-size="11.5" font-weight="600" fill="hsl(178,42%,26%)">SA 主筆：與開發共同確認需求方向、預先制定八成 UAT、需求轉規格、資料與流程設計</text>
+        <rect x="648" y="118" width="304" height="30" rx="6" fill="none" stroke="hsl(178,42%,34%)" stroke-dasharray="5,4"/>
+        <text x="800" y="138" text-anchor="middle" font-size="11.5" fill="hsl(178,42%,28%)">驗收主責：PJM（SA 確認規格符合）</text>
+        <rect x="24" y="156" width="928" height="30" rx="6" fill="hsl(35,52%,94%)" stroke="hsl(35,52%,44%)"/>
+        <text x="488" y="176" text-anchor="middle" font-size="11.5" font-weight="600" fill="hsl(35,52%,30%)">技術經理：人（招聘、訓練、能力評估）、標準與仲裁（選型、共用能力歸屬）、跨部門協調與攔路排除、技術路線——不碰單一系統日常實作</text>
+
+        <rect x="24" y="204" width="928" height="36" rx="8" fill="none" stroke="#c9ced4" stroke-dasharray="5,4"/>
+        <text x="488" y="227" text-anchor="middle" font-size="12" font-weight="600" fill="#5a626b">每個切分點都要有服務水準：開環境多久、開權限多久、技術問題多久回覆——由公司定義並公告</text>
+        <text x="488" y="266" text-anchor="middle" font-size="12" font-weight="700" fill="hsl(8,48%,42%)">任一專職缺位且無支援（含 SA 與技術經理接不住各自的橋樑角色），開發被迫自己做＝兩種模式的缺點同時存在</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="road-grid">
+    <div class="road maint">
+      <h3 data-edit="pos-8">這條路的必要條件</h3>
+      <ul data-edit="pos-9">
+        <li>需要真正的專職人員：環境與權限歸 MIS、品質歸測試、跨系統技術決策歸技術經理</li>
+        <li>開發人員只負責寫與交付，不可能、也不應該把所有事情自己準備到位</li>
+        <li>每個切分點都要有服務水準：開環境多久、開權限多久、誰回技術問題</li>
+        <li>權力集中的成立條件：每個專職角色都要夠強到能互相輔助——分工鏈的強度等於最弱的一環</li>
+      </ul>
+    </div>
+    <div class="road stalled">
+      <h3 data-edit="pos-10">沒做到位的下場（要避免的狀態）</h3>
+      <ul data-edit="pos-11">
+        <li>權責切了，但 MIS 或技術經理無法提供實質協助——開發要不到環境、等不到答案</li>
+        <li>開發人員無所適從：名義上不歸他管的事，實際上還是得自己硬做，等於兩種模式的缺點同時存在</li>
+        <li>結論：分工模式的成本是「專職支援必須真的存在」，付不起這個成本就不要選這條路</li>
+      </ul>
+    </div>
+  </div>
+  </details>
+
+  <details class="fold">
+    <summary><span data-edit="fold-fit">對照漢昕現況：人員特質與模式適配<span class="fold-sub">依技術評分與可查證的工作型態歸位，箭頭代表養成流向；綜合項目評分填完後可再校正。</span></span></summary>
+  <div class="arch" style="padding:14px 18px;">
+    <svg viewBox="0 0 980 620" style="max-width:980px; display:block; margin:0 auto" width="100%" role="img" aria-label="人員特質與模式適配">
+      <defs>
+        <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a929b"/></marker>
+      </defs>
+      <g font-family="PingFang TC,Noto Sans TC,sans-serif">
+        <rect x="24" y="106" width="250" height="96" rx="8" fill="hsl(262,32%,95%)" stroke="hsl(262,32%,50%)"/>
+        <text x="149" y="128" text-anchor="middle" font-size="12.5" font-weight="700" fill="hsl(262,32%,42%)">培養中</text>
+        <text x="149" y="150" text-anchor="middle" font-size="15" font-weight="700" fill="#2b3036">Zane、Anne</text>
+        <text x="149" y="172" text-anchor="middle" font-size="10.5" fill="#5a626b">Zane 以訓練專案累積從零到一經驗</text>
+        <text x="149" y="188" text-anchor="middle" font-size="10.5" fill="#5a626b">Anne 先讓工作進版本控制，才有資料可定位</text>
+
+        <rect x="354" y="106" width="250" height="96" rx="8" fill="hsl(35,52%,94%)" stroke="hsl(35,52%,44%)"/>
+        <text x="479" y="128" text-anchor="middle" font-size="12.5" font-weight="700" fill="hsl(35,52%,32%)">待驗證（交接中）</text>
+        <text x="479" y="150" text-anchor="middle" font-size="15" font-weight="700" fill="#2b3036">Aria、Nick</text>
+        <text x="479" y="172" text-anchor="middle" font-size="10.5" fill="#5a626b">掛著大型系統接手任務、提交占比仍低</text>
+        <text x="479" y="188" text-anchor="middle" font-size="10.5" fill="#5a626b">以「獨立完成並上線」任務驗證後歸位</text>
+
+        <rect x="684" y="28" width="280" height="96" rx="8" fill="hsl(178,42%,95%)" stroke="hsl(178,42%,34%)"/>
+        <text x="824" y="50" text-anchor="middle" font-size="12.5" font-weight="700" fill="hsl(178,42%,28%)">從零到一建置者</text>
+        <text x="824" y="72" text-anchor="middle" font-size="15" font-weight="700" fill="#2b3036">Jsnn、Wiwi、Dylan</text>
+        <text x="824" y="94" text-anchor="middle" font-size="10.5" fill="#5a626b">皆有獨力從零建系統的實績</text>
+        <text x="824" y="110" text-anchor="middle" font-size="10.5" fill="#5a626b">新產品線優先開案、開發期持三區權限</text>
+
+        <rect x="684" y="186" width="280" height="96" rx="8" fill="hsl(215,42%,95%)" stroke="hsl(215,42%,44%)"/>
+        <text x="824" y="208" text-anchor="middle" font-size="12.5" font-weight="700" fill="hsl(215,42%,36%)">接手與維運者</text>
+        <text x="824" y="230" text-anchor="middle" font-size="15" font-weight="700" fill="#2b3036">Ivan、Ted</text>
+        <text x="824" y="252" text-anchor="middle" font-size="10.5" fill="#5a626b">Ivan 接手實證最強、Ted 接手節奏佳</text>
+        <text x="824" y="268" text-anchor="middle" font-size="10.5" fill="#5a626b">上線後系統移交此線，搭配 MIS 權限收斂</text>
+
+        <line x1="274" y1="154" x2="350" y2="154" stroke="#8a929b" stroke-width="2" marker-end="url(#ar3)"/>
+        <path d="M 604 138 C 644 138, 644 76, 680 76" fill="none" stroke="#8a929b" stroke-width="2" marker-end="url(#ar3)"/>
+        <path d="M 604 170 C 644 170, 644 234, 680 234" fill="none" stroke="#8a929b" stroke-width="2" marker-end="url(#ar3)"/>
+        <text x="639" y="100" text-anchor="middle" font-size="10.5" fill="#8a929b">驗證通過</text>
+        <text x="639" y="222" text-anchor="middle" font-size="10.5" fill="#8a929b">適性歸位</text>
+        <text x="24" y="348" font-size="12" font-weight="700" fill="#5a626b">分組的統計依據：技術分（25 分制，五維版本庫證據加總）——長條顏色＝歸入的定位</text>
+        <text x="120" y="378" text-anchor="end" font-size="11.5" fill="#2b3036">Jsnn</text>
+        <rect x="132" y="366" width="560" height="13" rx="6" fill="#edeff1"/>
+        <rect x="132" y="366" width="515.2" height="13" rx="6" fill="hsl(178,42%,40%)"/>
+        <text x="655.2" y="378" font-size="10.5" fill="#5a626b">23／25</text>
+        <text x="120" y="402" text-anchor="end" font-size="11.5" fill="#2b3036">Wiwi</text>
+        <rect x="132" y="390" width="560" height="13" rx="6" fill="#edeff1"/>
+        <rect x="132" y="390" width="470.4" height="13" rx="6" fill="hsl(178,42%,40%)"/>
+        <text x="610.4" y="402" font-size="10.5" fill="#5a626b">21／25</text>
+        <text x="120" y="426" text-anchor="end" font-size="11.5" fill="#2b3036">Aria</text>
+        <rect x="132" y="414" width="560" height="13" rx="6" fill="#edeff1"/>
+        <rect x="132" y="414" width="425.6" height="13" rx="6" fill="hsl(35,52%,48%)"/>
+        <text x="565.6" y="426" font-size="10.5" fill="#5a626b">19／25</text>
+        <text x="120" y="450" text-anchor="end" font-size="11.5" fill="#2b3036">Ivan</text>
+        <rect x="132" y="438" width="560" height="13" rx="6" fill="#edeff1"/>
+        <rect x="132" y="438" width="380.8" height="13" rx="6" fill="hsl(215,42%,48%)"/>
+        <text x="520.8" y="450" font-size="10.5" fill="#5a626b">17／25</text>
+        <text x="120" y="474" text-anchor="end" font-size="11.5" fill="#2b3036">Dylan</text>
+        <rect x="132" y="462" width="560" height="13" rx="6" fill="#edeff1"/>
+        <rect x="132" y="462" width="380.8" height="13" rx="6" fill="hsl(178,42%,40%)"/>
+        <text x="520.8" y="474" font-size="10.5" fill="#5a626b">17／25</text>
+        <text x="120" y="498" text-anchor="end" font-size="11.5" fill="#2b3036">Ted</text>
+        <rect x="132" y="486" width="560" height="13" rx="6" fill="#edeff1"/>
+        <rect x="132" y="486" width="313.6" height="13" rx="6" fill="hsl(215,42%,48%)"/>
+        <text x="453.6" y="498" font-size="10.5" fill="#5a626b">14／25</text>
+        <text x="120" y="522" text-anchor="end" font-size="11.5" fill="#2b3036">Nick</text>
+        <rect x="132" y="510" width="560" height="13" rx="6" fill="#edeff1"/>
+        <rect x="132" y="510" width="201.6" height="13" rx="6" fill="hsl(35,52%,48%)"/>
+        <text x="341.6" y="522" font-size="10.5" fill="#5a626b">9／25</text>
+        <text x="120" y="546" text-anchor="end" font-size="11.5" fill="#2b3036">Zane</text>
+        <rect x="132" y="534" width="560" height="13" rx="6" fill="#edeff1"/>
+        <rect x="132" y="534" width="179.2" height="13" rx="6" fill="hsl(262,32%,55%)"/>
+        <text x="319.2" y="546" font-size="10.5" fill="#5a626b">8／25</text>
+        <text x="120" y="570" text-anchor="end" font-size="11.5" fill="#2b3036">Anne</text>
+        <rect x="132" y="558" width="560" height="13" rx="6" fill="#edeff1"/>
+        <text x="142.0" y="570" font-size="10.5" fill="#5a626b">0／25（資料不足）</text>
+        <text x="24" y="596" font-size="10.5" fill="#8a929b">判讀：建置者（青）皆 17 分以上且有從零實績；同為 17 分的 Dylan 與 Ivan 依工作型態分流（從零建置對接手維運）；</text>
+        <text x="24" y="612" font-size="10.5" fill="#8a929b">待驗證（橙）組內落差最大（19 對 9），正是需要驗證任務的原因；培養中（紫）墊底，Anne 無資料以 0 計。</text>
+      </g>
+    </svg>
+  </div>
+  </details>
+
+  <details class="fold">
+    <summary><span data-edit="fold-decision">建議的決策<span class="fold-sub">結論一張圖：採混合制，由依據、前提、職涯雙軌與未來組織四段支撐。</span></span></summary>
+  <div class="arch" style="padding:14px 18px;">
+    <svg viewBox="0 0 980 470" style="max-width:980px; display:block; margin:0 auto" width="100%" role="img" aria-label="建議決策">
+      <g font-family="PingFang TC,Noto Sans TC,sans-serif">
+        <text x="24" y="18" font-size="11" font-weight="700" fill="#8a929b">結論</text>
+        <rect x="24" y="26" width="940" height="52" rx="8" fill="hsl(178,42%,34%)"/>
+        <text x="494" y="49" text-anchor="middle" font-size="14.5" font-weight="700" fill="#ffffff">混合制：開發期一條龍、上線後正式區權限收斂移交 MIS</text>
+        <text x="494" y="68" text-anchor="middle" font-size="11" fill="hsl(178,42%,88%)">業界「產品團隊自運維＋平台團隊管底層」的縮小版</text>
+
+        <text x="24" y="106" font-size="11" font-weight="700" fill="#8a929b">依據</text>
+        <rect x="24" y="114" width="460" height="54" rx="8" fill="#ffffff" stroke="#c9ced4"/>
+        <text x="254" y="136" text-anchor="middle" font-size="13" font-weight="700" fill="#2b3036">九人對十四套版本庫（每人 1.6 套）</text>
+        <text x="254" y="156" text-anchor="middle" font-size="11" fill="#5a626b">養不起完整權責分工：模式二的專職支援成本付不起</text>
+        <rect x="504" y="114" width="460" height="54" rx="8" fill="#ffffff" stroke="#c9ced4"/>
+        <text x="734" y="136" text-anchor="middle" font-size="13" font-weight="700" fill="#2b3036">開發中系統單人提交佔比中位數 100％</text>
+        <text x="734" y="156" text-anchor="middle" font-size="11" fill="#5a626b">八套開發中系統的最大貢獻者佔比中位數 100％——把既成事實制度化</text>
+
+        <text x="24" y="196" font-size="11" font-weight="700" fill="#8a929b">前提（先成立才上路）</text>
+        <rect x="24" y="204" width="460" height="54" rx="8" fill="hsl(35,52%,94%)" stroke="hsl(35,52%,44%)"/>
+        <text x="254" y="226" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(35,52%,32%)">前提一：MIS 備援能力先驗收</text>
+        <text x="254" y="246" text-anchor="middle" font-size="11" fill="#5a626b">至少能獨立重建任一系統環境（可查證的演練紀錄目前為零）</text>
+        <rect x="504" y="204" width="460" height="54" rx="8" fill="hsl(35,52%,94%)" stroke="hsl(35,52%,44%)"/>
+        <text x="734" y="226" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(35,52%,32%)">前提二：執行共用能力歸屬原則</text>
+        <text x="734" y="246" text-anchor="middle" font-size="11" fill="#5a626b">否則一條龍會養出重複開發（見公司系統架構分頁）</text>
+
+        <text x="24" y="286" font-size="11" font-weight="700" fill="#8a929b">職涯雙軌（都要有升遷敘事）</text>
+        <rect x="24" y="294" width="460" height="54" rx="8" fill="hsl(262,32%,95%)" stroke="hsl(262,32%,50%)"/>
+        <text x="254" y="316" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(262,32%,42%)">建置線：從零到一開新案</text>
+        <text x="254" y="336" text-anchor="middle" font-size="11" fill="#5a626b">開發期持有開發、測試、正式三區權限</text>
+        <rect x="504" y="294" width="460" height="54" rx="8" fill="hsl(215,42%,95%)" stroke="hsl(215,42%,44%)"/>
+        <text x="734" y="316" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(215,42%,36%)">維運線：接手與穩定營運</text>
+        <text x="734" y="336" text-anchor="middle" font-size="11" fill="#5a626b">獨立的高價值專業（Ivan 實證），不是懲罰</text>
+
+        <text x="24" y="376" font-size="11" font-weight="700" fill="#8a929b">未來組織架構（可合併為四個單位）</text>
+        <rect x="24" y="384" width="220" height="56" rx="8" fill="hsl(178,42%,95%)" stroke="hsl(178,42%,34%)"/>
+        <text x="134" y="407" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(178,42%,28%)">AI 智能</text>
+        <text x="134" y="427" text-anchor="middle" font-size="11" fill="#5a626b">模型、代理、知識庫</text>
+        <rect x="264" y="384" width="220" height="56" rx="8" fill="hsl(215,42%,95%)" stroke="hsl(215,42%,44%)"/>
+        <text x="374" y="407" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(215,42%,36%)">產品開發</text>
+        <text x="374" y="427" text-anchor="middle" font-size="11" fill="#5a626b">從零到一建置線</text>
+        <rect x="504" y="384" width="220" height="56" rx="8" fill="hsl(262,32%,95%)" stroke="hsl(262,32%,50%)"/>
+        <text x="614" y="407" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(262,32%,42%)">系統維護</text>
+        <text x="614" y="427" text-anchor="middle" font-size="11" fill="#5a626b">接手與維運線</text>
+        <rect x="744" y="384" width="220" height="56" rx="8" fill="hsl(35,52%,94%)" stroke="hsl(35,52%,44%)"/>
+        <text x="854" y="407" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(35,52%,32%)">網路管理</text>
+        <text x="854" y="427" text-anchor="middle" font-size="11" fill="#5a626b">MIS：環境、權限、備援</text>
+      </g>
+    </svg>
+  </div>
+  </details>
+
+</section>
+
+<!-- ==================== 詳細版架構（隱藏分頁） ==================== -->
+<section class="tab" id="t-archdetail">
+  <h2>漢昕軟體系統架構（詳細版）</h2>
+  <p class="h2-note">
+    結合資料治理藍圖的完整分層（CMS 人類編輯入口、AI 可讀資料層、層內 U 型關係、紅字錯置欄位）與本儀表板的版本庫盤點（實際介接、缺口、各系統進行中工作）。
+    用途：任何人開發前看這張圖，就知道自己要的資料該從哪裡取、產出往哪裡去、其他人正在做什麼。
+    <a href="#" data-goto="t-roadmap" style="color:var(--c-blue)">回簡明版</a>
+  </p>
+  <div class="arch" style="padding:18px;">
+      <svg id="archSvgD" class="archmap" viewBox="0 0 1180 922" width="100%" role="img" aria-label="漢昕軟體系統架構詳細版">
+      <g font-family="PingFang TC,Noto Sans TC,sans-serif">
+      <rect x="8" y="74" width="1164" height="102" rx="10" fill="hsl(215,42%,97%)" stroke="hsl(215,42%,86%)"/>
+      <rect x="8" y="468" width="1164" height="244" rx="10" fill="hsl(262,32%,97.5%)" stroke="hsl(262,32%,88%)"/>
+      <rect x="8" y="736" width="1164" height="96" rx="10" fill="hsl(35,52%,96%)" stroke="hsl(35,52%,84%)"/>
+      <g class="an" data-node="sso" data-tip="EIP 轉型目標：登入一次進入下方所有內部系統；因資料在 NAS、微軟帳戶建置唯一入口有難度，2026-01 月初停擺" style="cursor:pointer">
+      <rect x="16" y="14" width="1148" height="48" rx="8" fill="hsl(8,48%,95%)" stroke="hsl(8,48%,46%)" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <text x="590" y="35" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(8,48%,38%)">企業入口（單一登入）——規劃停擺</text>
+      <text x="590" y="53" text-anchor="middle" font-size="11" fill="#8a929b">目標：登入一次進入下方所有內部系統（2026-01 月初停擺：資料在 NAS、微軟帳戶建置困難）</text>
+      </g>
+      <text x="16" y="92" font-size="13" font-weight="700" fill="#5a626b">權威資料來源<tspan font-size="11" font-weight="400" fill="#8a929b">　每筆共用資料只有一個主人；橙虛框＝待廢除</tspan></text>
+      <rect x="16" y="212" width="588" height="208" rx="10" fill="none" stroke="hsl(262,32%,80%)" stroke-dasharray="3,4"/>
+      <text x="30" y="230" font-size="12" font-weight="700" fill="hsl(262,32%,45%)">知識管理（KM）<tspan font-size="10.5" font-weight="400" fill="#8a929b">　人類編輯入口 → AI 可讀資料層　｜　下排：知識內容域（U 型＝層內關係）</tspan></text>
+      <rect x="624" y="212" width="544" height="208" rx="10" fill="none" stroke="hsl(178,42%,70%)" stroke-dasharray="3,4"/>
+      <text x="638" y="230" font-size="12" font-weight="700" fill="hsl(178,42%,30%)">共用能力<tspan font-size="10.5" font-weight="400" fill="#8a929b">　建一次、全公司呼叫</tspan></text>
+      <text x="16" y="486" font-size="13" font-weight="700" fill="#5a626b">系統工具層<tspan font-size="11" font-weight="400" fill="#8a929b">　上排橙框＝對外能力、下排紫框＝內部系統；紅字＝錯置欄位（不該存在這裡的資料）</tspan></text>
+      <text x="16" y="752" font-size="13" font-weight="700" fill="#5a626b">產出物<tspan font-size="11" font-weight="400" fill="#8a929b">　交付客戶與內部</tspan></text>
+      <path class="ae" data-from="eip" data-to="pms" d="M 299.0 162.0 C 299.0 388.0, 132.5 388.0, 132.5 614.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="rfp" data-to="rag" d="M 687.0 162.0 C 687.0 200.0, 452.0 200.0, 452.0 238.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="socsrc" data-to="soc" d="M 881.0 162.0 C 881.0 332.0, 132.5 332.0, 132.5 502.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="scan" data-to="vuln" d="M 1075.0 162.0 C 1075.0 332.0, 364.5 332.0, 364.5 502.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="llm" data-to="agent" d="M 765.0 238.0 C 765.0 270.0, 1029.0 270.0, 1029.0 302.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="llm" data-to="rag" d="M 765.0 238.0 C 765.0 270.0, 452.0 270.0, 452.0 302.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="agent" data-to="soc" d="M 1029.0 302.0 C 1029.0 402.0, 132.5 402.0, 132.5 502.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="rag" data-to="o_prop" d="M 452.0 302.0 C 452.0 534.0, 92.0 534.0, 92.0 766.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="soc" data-to="o_soc" d="M 132.5 586.0 C 132.5 676.0, 260.0 676.0, 260.0 766.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="vuln" data-to="o_vuln" d="M 364.5 586.0 C 364.5 676.0, 428.0 676.0, 428.0 766.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="ssc" data-to="o_ssc" d="M 596.5 586.0 C 596.5 676.0, 596.0 676.0, 596.0 766.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="grs" data-to="o_rep" d="M 890.0 412.0 C 890.0 589.0, 764.0 589.0, 764.0 766.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="isms" data-to="o_iso" d="M 364.5 698.0 C 364.5 732.0, 932.0 732.0, 932.0 766.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="learn" data-to="o_exam" d="M 596.5 698.0 C 596.5 732.0, 1100.0 732.0, 1100.0 766.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="k1" data-to="rag" d="M 121.0 348.0 C 121.0 325.0, 452.0 325.0, 452.0 302.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="k2" data-to="rag" d="M 315.0 348.0 C 315.0 325.0, 452.0 325.0, 452.0 302.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="k3" data-to="rag" d="M 504.0 348.0 C 504.0 325.0, 452.0 325.0, 452.0 302.0" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.8"/>
+      <path class="ae" data-from="cms" data-to="rag" data-tip="規劃中：CMS 建好後，知識由人類編輯入口寫入 AI 可讀層" d="M 166.0 238.0 C 166.0 270.0, 452.0 270.0, 452.0 302.0" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
+      <path class="ae" data-from="pms" data-to="rag" data-tip="應介接：履約實績應入知識庫，供建議書實績章節引用（現為人工整理）" d="M 132.5 614.0 C 132.5 458.0, 452.0 458.0, 452.0 302.0" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
+      <path class="ae" data-from="vuln" data-to="grs" data-tip="應介接：弱點複測報告應改走生成式報告引擎排版輸出" d="M 364.5 502.0 C 364.5 457.0, 890.0 457.0, 890.0 412.0" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
+      <path class="ae" data-from="ssc" data-to="grs" data-tip="應介接：演練報告應改走生成式報告引擎排版輸出" d="M 596.5 502.0 C 596.5 457.0, 890.0 457.0, 890.0 412.0" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
+      <path class="ae" data-from="clinic" data-to="grs" data-tip="應介接：健診重啟時報告輸出直接複用生成式報告引擎" d="M 828.5 502.0 C 828.5 457.0, 890.0 457.0, 890.0 412.0" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
+      <path class="ae" data-from="pms" data-to="web" data-tip="建議介接：官網服務與實績內容應引用專案管理系統資料" d="M 132.5 614.0 C 132.5 600.0, 1060.5 600.0, 1060.5 586.0" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
+      <path class="ae" data-from="hr" data-to="pms" data-tip="缺位：員工與部門資料應由人資系統供應，現暫由 EIP 代理" d="M 105.0 162.0 C 105.0 388.0, 132.5 388.0, 132.5 614.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
+      <path class="ae" data-from="hr" data-to="isms" data-tip="缺位：人員名單應由人資系統供應，現自建" d="M 105.0 162.0 C 105.0 388.0, 364.5 388.0, 364.5 614.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
+      <path class="ae" data-from="hr" data-to="learn" data-tip="缺位：受測名單應由人資系統供應，現自建" d="M 105.0 162.0 C 105.0 388.0, 596.5 388.0, 596.5 614.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
+      <path class="ae" data-from="cust" data-to="ssc" data-tip="缺位：客戶資料無權威來源，社交工程自建名單" d="M 493.0 162.0 C 493.0 332.0, 596.5 332.0, 596.5 502.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
+      <path class="ae" data-from="cust" data-to="soc" data-tip="缺位：客戶資料無權威來源，戰情中心各自維護" d="M 493.0 162.0 C 493.0 332.0, 132.5 332.0, 132.5 502.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
+      <path class="ae" data-from="att" data-to="hr" data-tip="缺位：人資考勤（人資桶）重啟後應成為人資權威來源的載體" d="M 828.5 614.0 C 828.5 388.0, 105.0 388.0, 105.0 162.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
+      <path class="ae" data-from="eip" data-to="hr" data-tip="退場過渡：EIP 廢除前，員工與差勤資料的代理角色須交棒給人資系統" d="M 299.0 106.0 C 299.0 134.0, 105.0 134.0, 105.0 162.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
+      <path class="ae" data-from="k1" data-to="k2" data-tip="層內關係：知識內容域彼此引用" d="M 121.0 396.0 C 121.0 426.0, 315.0 426.0, 315.0 396.0" fill="none" stroke="hsl(262,32%,55%)" stroke-width="1.6" stroke-dasharray="2,4"/>
+      <path class="ae" data-from="k2" data-to="k3" data-tip="層內關係：知識內容域彼此引用" d="M 315.0 396.0 C 315.0 426.0, 504.0 426.0, 504.0 396.0" fill="none" stroke="hsl(262,32%,55%)" stroke-width="1.6" stroke-dasharray="2,4"/>
+      <path class="ae" data-from="isms" data-to="vuln" data-tip="資安三平台整合（BCCSONE 藍圖）：統一資產清冊 API 供掃描目標對應；弱點同步整合資料庫、轉風險評分" d="M 364.5 614 C 364.5 600, 364.5 600, 364.5 586" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
+      <path class="ae" data-from="isms" data-to="soc" data-tip="資安三平台整合（BCCSONE 藍圖）：監控端點對應統一資產清冊；安全事件摘要同步整合資料庫、匯入風險評鑑" d="M 364.5 614 C 364.5 600, 132.5 600, 132.5 586" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
+      <path class="ae" data-from="isms" data-to="grs" data-tip="應介接：稽核與風險評估報告模版對接生成式報告引擎，不自建" d="M 364.5 614 C 364.5 543, 890 543, 890 412" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
+      <path class="ae" data-from="soc" data-to="grs" data-tip="應介接：三平台報告對接——戰情資料由報告引擎產出彙整報告" d="M 132.5 502 C 132.5 457, 890 457, 890 412" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
+      <g class="an" data-node="hr" data-tip="員工、部門、證照的權威來源。目前缺位，暫由 EIP 代理，導致四套系統各自維護名單。" style="cursor:pointer">
+      <rect x="16" y="106" width="178" height="56" rx="8" fill="hsl(8,48%,95%)" stroke="hsl(8,48%,46%)" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <text x="105.0" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(8,48%,38%)">人資系統</text>
+      <text x="105.0" y="145" text-anchor="middle" font-size="10.5" fill="#5a626b">權威來源缺位（停擺）</text>
+      </g>
+      <g class="an" data-node="eip" data-tip="VB.NET 舊系統，待廢除：商機與訂單已移入專案管理系統、差勤移入人資桶；費用與員工資料暫由其代理至退場。" style="cursor:pointer">
+      <rect x="210" y="106" width="178" height="56" rx="8" fill="hsl(35,52%,94%)" stroke="hsl(35,52%,44%)" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <text x="299.0" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(35,52%,32%)">EIP 企業入口</text>
+      <text x="299.0" y="145" text-anchor="middle" font-size="10.5" fill="#5a626b">待廢除（退場中）</text>
+      </g>
+      <g class="an" data-node="cust" data-tip="客戶資料目前散落在社交工程、SOC、標案文件中，無單一權威來源——資料治理待決事項。" style="cursor:pointer">
+      <rect x="404" y="106" width="178" height="56" rx="8" fill="hsl(8,48%,95%)" stroke="hsl(8,48%,46%)" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <text x="493.0" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(8,48%,38%)">客戶資料</text>
+      <text x="493.0" y="145" text-anchor="middle" font-size="10.5" fill="#5a626b">來源未定，散落各系統</text>
+      </g>
+      <g class="an" data-node="rfp" style="cursor:pointer">
+      <rect x="598" y="106" width="178" height="56" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
+      <text x="687.0" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#2b3036">標案需求文件</text>
+      <text x="687.0" y="145" text-anchor="middle" font-size="10.5" fill="#5a626b">外部輸入</text>
+      </g>
+      <g class="an" data-node="socsrc" style="cursor:pointer">
+      <rect x="792" y="106" width="178" height="56" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
+      <text x="881.0" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#2b3036">SOC 事件資料</text>
+      <text x="881.0" y="145" text-anchor="middle" font-size="10.5" fill="#5a626b">監控告警源</text>
+      </g>
+      <g class="an" data-node="scan" style="cursor:pointer">
+      <rect x="986" y="106" width="178" height="56" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
+      <text x="1075.0" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="#2b3036">外部掃描工具</text>
+      <text x="1075.0" y="145" text-anchor="middle" font-size="10.5" fill="#5a626b">弱點資料源</text>
+      </g>
+      <g class="an" data-node="cms" data-tip="規劃中：讓非工程人員（業務、PM）能編輯知識內容，寫入 AI 可讀層。" style="cursor:pointer">
+      <rect x="36" y="238" width="260" height="64" rx="8" fill="#ffffff" stroke="hsl(35,52%,44%)" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <text x="166.0" y="260" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(35,52%,32%)">CMS 人類編輯入口</text>
+      <text x="166.0" y="277" text-anchor="middle" font-size="10.5" fill="#5a626b">規劃中，尚未建置</text>
+      <text x="166.0" y="293" text-anchor="middle" font-size="10" fill="#8a929b">非工程人員維護知識的入口</text>
+      </g>
+      <g class="an" data-node="rag" data-tip="來源：標案需求文件、模型推論；未來接 CMS 與專案實績。去向：服務建議書。" style="cursor:pointer">
+      <rect x="320" y="238" width="264" height="64" rx="8" fill="hsl(178,42%,96%)" stroke="hsl(178,42%,34%)" stroke-width="1.5"/>
+      <text x="452.0" y="260" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(178,42%,26%)">文件知識庫（AI 可讀層）</text>
+      <text x="452.0" y="277" text-anchor="middle" font-size="10.5" fill="#5a626b">Wiwi</text>
+      <text x="452.0" y="293" text-anchor="middle" font-size="10" fill="#8a929b">進行中：SOP 模組、預覽</text>
+      </g>
+      <g class="an" data-node="k1" style="cursor:pointer">
+      <rect x="36" y="348" width="170" height="48" rx="8" fill="hsl(262,32%,96%)" stroke="hsl(262,32%,50%)" stroke-width="1.5"/>
+      <text x="121.0" y="379" text-anchor="middle" font-size="12.5" font-weight="700" fill="hsl(262,32%,40%)">服務與實績知識</text>
+      </g>
+      <g class="an" data-node="k2" style="cursor:pointer">
+      <rect x="230" y="348" width="170" height="48" rx="8" fill="hsl(262,32%,96%)" stroke="hsl(262,32%,50%)" stroke-width="1.5"/>
+      <text x="315.0" y="379" text-anchor="middle" font-size="12.5" font-weight="700" fill="hsl(262,32%,40%)">資安知識與 SOP</text>
+      </g>
+      <g class="an" data-node="k3" style="cursor:pointer">
+      <rect x="424" y="348" width="160" height="48" rx="8" fill="hsl(262,32%,96%)" stroke="hsl(262,32%,50%)" stroke-width="1.5"/>
+      <text x="504.0" y="379" text-anchor="middle" font-size="12.5" font-weight="700" fill="hsl(262,32%,40%)">範本與規格</text>
+      </g>
+      <g class="an" data-node="llm" data-tip="定位：全公司唯一模型推論出口，任何系統要用模型一律呼叫此處。" style="cursor:pointer">
+      <rect x="640" y="238" width="250" height="64" rx="8" fill="hsl(178,42%,96%)" stroke="hsl(178,42%,34%)" stroke-width="1.5"/>
+      <text x="765.0" y="260" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(178,42%,26%)">模型推論平台</text>
+      <text x="765.0" y="277" text-anchor="middle" font-size="10.5" fill="#5a626b">Jsnn</text>
+      <text x="765.0" y="293" text-anchor="middle" font-size="10" fill="#8a929b">進行中：評測、監控</text>
+      </g>
+      <g class="an" data-node="agent" data-tip="定位：智慧代理統一入口，現供戰情中心。" style="cursor:pointer">
+      <rect x="910" y="238" width="238" height="64" rx="8" fill="hsl(178,42%,96%)" stroke="hsl(178,42%,34%)" stroke-width="1.5"/>
+      <text x="1029.0" y="260" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(178,42%,26%)">代理端點服務</text>
+      <text x="1029.0" y="277" text-anchor="middle" font-size="10.5" fill="#5a626b">Jsnn</text>
+      <text x="1029.0" y="293" text-anchor="middle" font-size="10" fill="#8a929b">進行中：預設組、可觀測性</text>
+      </g>
+      <g class="an" data-node="grs" data-tip="定位：全公司唯一報告排版輸出引擎。弱掃、社交工程、健診報告都應套用。" style="cursor:pointer">
+      <rect x="760" y="348" width="260" height="64" rx="8" fill="hsl(178,42%,96%)" stroke="hsl(178,42%,34%)" stroke-width="1.5"/>
+      <text x="890.0" y="370" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(178,42%,26%)">生成式報告引擎</text>
+      <text x="890.0" y="387" text-anchor="middle" font-size="10.5" fill="#5a626b">Ivan（Wiwi 交接）</text>
+      <text x="890.0" y="403" text-anchor="middle" font-size="10" fill="#8a929b">進行中：輸出品質細修</text>
+      </g>
+      <g class="an" data-node="soc" data-tip="來源：SOC 事件資料、代理端點、模型推論。去向：戰情報告。" style="cursor:pointer">
+      <rect x="30" y="502" width="205" height="84" rx="8" fill="hsl(35,52%,97%)" stroke="hsl(35,52%,44%)" stroke-width="1.5"/>
+      <text x="132.5" y="524" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(35,52%,30%)">advMDR 戰情中心</text>
+      <text x="132.5" y="541" text-anchor="middle" font-size="10.5" fill="#5a626b">Jsnn、Nick（交接中）</text>
+      <text x="132.5" y="558" text-anchor="middle" font-size="10" fill="#8a929b">進行中：正式部署管線</text>
+      </g>
+      <g class="an" data-node="vuln" data-tip="來源：外部掃描工具。去向：弱點複測報告（應改走報告引擎）。" style="cursor:pointer">
+      <rect x="262" y="502" width="205" height="84" rx="8" fill="hsl(35,52%,97%)" stroke="hsl(35,52%,44%)" stroke-width="1.5"/>
+      <text x="364.5" y="524" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(35,52%,30%)">弱點管理平台</text>
+      <text x="364.5" y="541" text-anchor="middle" font-size="10.5" fill="#5a626b">Dylan</text>
+      <text x="364.5" y="558" text-anchor="middle" font-size="10" fill="#8a929b">進行中：複測流程</text>
+      </g>
+      <g class="an" data-node="ssc" data-tip="去向：演練報告（應改走報告引擎）。客戶與員工名單目前自建，屬錯置。" style="cursor:pointer">
+      <rect x="494" y="502" width="205" height="84" rx="8" fill="hsl(35,52%,97%)" stroke="hsl(35,52%,44%)" stroke-width="1.5"/>
+      <text x="596.5" y="524" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(35,52%,30%)">社交工程系統</text>
+      <text x="596.5" y="541" text-anchor="middle" font-size="10.5" fill="#5a626b">Ivan</text>
+      <text x="596.5" y="558" text-anchor="middle" font-size="10" fill="#8a929b">進行中：維運修補</text>
+      <text x="596.5" y="575" text-anchor="middle" font-size="9.5" fill="hsl(8,48%,42%)">客戶與員工名單自建（錯置）</text>
+      </g>
+      <g class="an" data-node="clinic" data-tip="停擺。重啟時報告輸出直接複用生成式報告引擎，不另建。" style="cursor:pointer">
+      <rect x="726" y="502" width="205" height="84" rx="8" fill="hsl(8,48%,95%)" stroke="hsl(8,48%,46%)" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <text x="828.5" y="524" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(8,48%,38%)">資安健診系統</text>
+      <text x="828.5" y="541" text-anchor="middle" font-size="10.5" fill="#5a626b">停擺</text>
+      <text x="828.5" y="558" text-anchor="middle" font-size="10" fill="#8a929b">重啟應複用報告引擎</text>
+      </g>
+      <g class="an" data-node="web" data-tip="內容應引用專案管理系統（實績）與知識庫（服務說明），避免手動維護打架。" style="cursor:pointer">
+      <rect x="958" y="502" width="205" height="84" rx="8" fill="hsl(35,52%,97%)" stroke="hsl(35,52%,44%)" stroke-width="1.5"/>
+      <text x="1060.5" y="524" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(35,52%,30%)">公司官網</text>
+      <text x="1060.5" y="541" text-anchor="middle" font-size="10.5" fill="#5a626b">Anne（名義）</text>
+      <text x="1060.5" y="558" text-anchor="middle" font-size="10" fill="#8a929b">無進行中提交</text>
+      <text x="1060.5" y="575" text-anchor="middle" font-size="9.5" fill="hsl(8,48%,42%)">服務與實績手動維護（錯置）</text>
+      </g>
+      <g class="an" data-node="pms" data-tip="來源：EIP（費用、員工代理，至 EIP 退場為止）。已承接 EIP 的商機與訂單管理。去向：實績應入知識庫、官網應引用。本身是「案」的權威來源。" style="cursor:pointer">
+      <rect x="30" y="614" width="205" height="84" rx="8" fill="hsl(262,32%,97%)" stroke="hsl(262,32%,50%)" stroke-width="1.5"/>
+      <text x="132.5" y="636" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(262,32%,40%)">專案管理系統</text>
+      <text x="132.5" y="653" text-anchor="middle" font-size="10.5" fill="#5a626b">Aria、Ren</text>
+      <text x="132.5" y="670" text-anchor="middle" font-size="10" fill="#8a929b">進行中：導覽、標註、安全強化</text>
+      <text x="132.5" y="687" text-anchor="middle" font-size="9.5" fill="hsl(8,48%,42%)">已承接 EIP 商機與訂單管理</text>
+      </g>
+      <g class="an" data-node="isms" data-tip="BCCS One：統一資產清冊與風險評鑑引擎的權威來源（資產模組與風險核心已完成）；前端完成九成，後端 API 與資料庫為上線最大阻礙。去向：制度文件；人員名單應改由人資來源供應。" style="cursor:pointer">
+      <rect x="262" y="614" width="205" height="84" rx="8" fill="hsl(262,32%,97%)" stroke="hsl(262,32%,50%)" stroke-width="1.5"/>
+      <text x="364.5" y="636" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(262,32%,40%)">資安大師（BCCS One）</text>
+      <text x="364.5" y="653" text-anchor="middle" font-size="10.5" fill="#5a626b">Weiyao、Ted</text>
+      <text x="364.5" y="670" text-anchor="middle" font-size="10" fill="#8a929b">進行中：參數設定、條文庫</text>
+      <text x="364.5" y="687" text-anchor="middle" font-size="9.5" fill="hsl(8,48%,42%)">人員名單自建（錯置）</text>
+      </g>
+      <g class="an" data-node="learn" data-tip="去向：評量結果。受測名單應改由人資來源供應。" style="cursor:pointer">
+      <rect x="494" y="614" width="205" height="84" rx="8" fill="hsl(262,32%,97%)" stroke="hsl(262,32%,50%)" stroke-width="1.5"/>
+      <text x="596.5" y="636" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(262,32%,40%)">線上評量系統</text>
+      <text x="596.5" y="653" text-anchor="middle" font-size="10.5" fill="#5a626b">Zane</text>
+      <text x="596.5" y="670" text-anchor="middle" font-size="10" fill="#8a929b">進行中：評量改版</text>
+      <text x="596.5" y="687" text-anchor="middle" font-size="9.5" fill="hsl(8,48%,42%)">受測名單自建（錯置）</text>
+      </g>
+      <g class="an" data-node="att" data-tip="停擺中（人資桶）。EIP 的打卡差勤已劃歸此處；重啟時應定位為人資權威來源的載體，不只做打卡。" style="cursor:pointer">
+      <rect x="726" y="614" width="205" height="84" rx="8" fill="hsl(8,48%,95%)" stroke="hsl(8,48%,46%)" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <text x="828.5" y="636" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(8,48%,38%)">人資考勤系統（人資桶）</text>
+      <text x="828.5" y="653" text-anchor="middle" font-size="10.5" fill="#5a626b">停擺（Harry 離職）</text>
+      <text x="828.5" y="670" text-anchor="middle" font-size="10" fill="#8a929b">應承接 EIP 差勤並成為人資權威來源</text>
+      </g>
+      <g class="an" data-node="o_prop" style="cursor:pointer">
+      <rect x="16" y="766" width="152" height="52" rx="8" fill="#f1f2f4" stroke="#b7bdc4" stroke-width="1.5"/>
+      <text x="92.0" y="797" text-anchor="middle" font-size="12.5" font-weight="700" fill="#2b3036">服務建議書</text>
+      </g>
+      <g class="an" data-node="o_soc" style="cursor:pointer">
+      <rect x="184" y="766" width="152" height="52" rx="8" fill="#f1f2f4" stroke="#b7bdc4" stroke-width="1.5"/>
+      <text x="260.0" y="797" text-anchor="middle" font-size="12.5" font-weight="700" fill="#2b3036">戰情報告</text>
+      </g>
+      <g class="an" data-node="o_vuln" style="cursor:pointer">
+      <rect x="352" y="766" width="152" height="52" rx="8" fill="#f1f2f4" stroke="#b7bdc4" stroke-width="1.5"/>
+      <text x="428.0" y="797" text-anchor="middle" font-size="12.5" font-weight="700" fill="#2b3036">弱點複測報告</text>
+      </g>
+      <g class="an" data-node="o_ssc" style="cursor:pointer">
+      <rect x="520" y="766" width="152" height="52" rx="8" fill="#f1f2f4" stroke="#b7bdc4" stroke-width="1.5"/>
+      <text x="596.0" y="797" text-anchor="middle" font-size="12.5" font-weight="700" fill="#2b3036">演練報告</text>
+      </g>
+      <g class="an" data-node="o_rep" style="cursor:pointer">
+      <rect x="688" y="766" width="152" height="52" rx="8" fill="#f1f2f4" stroke="#b7bdc4" stroke-width="1.5"/>
+      <text x="764.0" y="797" text-anchor="middle" font-size="12.5" font-weight="700" fill="#2b3036">客製報告書</text>
+      </g>
+      <g class="an" data-node="o_iso" style="cursor:pointer">
+      <rect x="856" y="766" width="152" height="52" rx="8" fill="#f1f2f4" stroke="#b7bdc4" stroke-width="1.5"/>
+      <text x="932.0" y="797" text-anchor="middle" font-size="12.5" font-weight="700" fill="#2b3036">制度文件</text>
+      </g>
+      <g class="an" data-node="o_exam" style="cursor:pointer">
+      <rect x="1024" y="766" width="152" height="52" rx="8" fill="#f1f2f4" stroke="#b7bdc4" stroke-width="1.5"/>
+      <text x="1100.0" y="797" text-anchor="middle" font-size="12.5" font-weight="700" fill="#2b3036">評量結果</text>
+      </g>
+      <g font-size="11.5" fill="#5a626b">
+      <line x1="16" y1="862" x2="52" y2="862" stroke="hsl(178,42%,40%)" stroke-width="2"/><text x="60" y="866">現行介接</text>
+      <line x1="140" y1="862" x2="176" y2="862" stroke="hsl(35,52%,48%)" stroke-width="2" stroke-dasharray="6,4"/><text x="184" y="866">應介接、尚未做</text>
+      <line x1="300" y1="862" x2="336" y2="862" stroke="hsl(8,48%,50%)" stroke-width="2" stroke-dasharray="3,4"/><text x="344" y="866">權威來源缺位</text>
+      <line x1="460" y1="862" x2="496" y2="862" stroke="hsl(262,32%,55%)" stroke-width="2" stroke-dasharray="2,4"/><text x="504" y="866">層內關係（U 型）</text>
+      <text x="640" y="866" fill="hsl(8,48%,42%)">紅字＝錯置欄位</text>
+      <text x="760" y="866" fill="#8a929b">滑鼠移到節點或線上：亮出上下游與說明</text>
+      </g></g></svg>
+  </div>
+</section>
+
+<footer>
+  <div>統計基準：內部版本庫各分支提交紀錄（每庫最多四百筆抽樣）、雲端版本庫貢獻者統計與最近三百筆提交、內部平台使用者年度活動量。提交數為抽樣下限，非完整總數。</div>
+  <div>漂移率計算：各庫提交依時間排序，取最早與最近各三分之一，對提交主旨做詞彙分佈比較（餘弦距離）。規格驅動開發與接手換人會虛增漂移，須以人工歸因修正。</div>
+  <div>本報告為時點快照（2026-06-11），交接類評分會隨交接進度浮動，建議每月重跑一次比對趨勢。</div>
+</footer>
+
+</div>
+
+<script>
+(function () {
+  var LS_SCORES = 'bccs-dash-manual-scores';
+  var LS_EDITS  = 'bccs-dash-text-edits';
+  var LS_DRIFT  = 'bccs-dash-drift-attr';
+
+  var PEOPLE = [
+    { id: 'jsnn',  name: 'Jsnn',  tech: 23, role: 'advMDR 戰情中心、模型推論平台、代理端點服務' },
+    { id: 'wiwi',  name: 'Wiwi',  tech: 21, role: '文件知識庫系統開發中；生成式報告已交接' },
+    { id: 'aria',  name: 'Aria',  tech: 19, role: '專案管理系統接手主導' },
+    { id: 'ivan',  name: 'Ivan',  tech: 17, role: '社交工程系統、生成式報告系統維運' },
+    { id: 'dylan', name: 'Dylan', tech: 17, role: '弱點管理平台獨力開發' },
+    { id: 'ted',   name: 'Ted',   tech: 14, role: '資安大師後端接手' },
+    { id: 'nick',  name: 'Nick',  tech: 9,  role: 'advMDR 戰情中心交接初期' },
+    { id: 'zane',  name: 'Zane',  tech: 8,  role: '線上評量系統（訓練用）' },
+    { id: 'anne',  name: 'Anne',  tech: 0,  role: '公司官網維護（查無產出，技術分以 0 計）' }
+  ];
+  var DIMS = ['vision', 'logic', 'drive', 'team'];
+  var MANUAL_MAX = DIMS.length * 5;
+
+  function lsGet(key) {
+    try { return JSON.parse(localStorage.getItem(key)) || {}; }
+    catch (e) { return {}; }
+  }
+  function lsSet(key, val) {
+    localStorage.setItem(key, JSON.stringify(val));
+    flashSaved();
+  }
+
+  var savedTip = document.getElementById('savedTip');
+  var savedTimer = null;
+  function flashSaved() {
+    savedTip.style.display = 'inline';
+    clearTimeout(savedTimer);
+    savedTimer = setTimeout(function () { savedTip.style.display = 'none'; }, 1500);
+  }
+
+  /* 分頁 */
+  var tabs = document.getElementById('tabs');
+  tabs.addEventListener('click', function (e) {
+    var btn = e.target.closest('button');
+    if (!btn) return;
+    tabs.querySelectorAll('button').forEach(function (b) { b.classList.remove('on'); });
+    document.querySelectorAll('section.tab').forEach(function (s) { s.classList.remove('on'); });
+    btn.classList.add('on');
+    document.getElementById(btn.dataset.tab).classList.add('on');
+  });
+
+  /* 綜合項目評分表 */
+  var scores = lsGet(LS_SCORES);
+
+  function clamp(v) {
+    var n = parseFloat(v);
+    if (isNaN(n)) return null;
+    return Math.max(0, Math.min(5, n));
+  }
+  function personScore(id) {
+    var s = scores[id] || {};
+    var sub = 0;
+    DIMS.forEach(function (d) { sub += (typeof s[d] === 'number' ? s[d] : 0); });
+    return sub;
+  }
+
+  function buildManualTable() {
+    var tbody = document.querySelector('#manualTable tbody');
+    tbody.innerHTML = '';
+    PEOPLE.forEach(function (p) {
+      var s = scores[p.id] || {};
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td class="ptoggle" data-person="' + p.id + '"><b>' + p.name + '</b></td>' +
+        DIMS.map(function (d) {
+          var val = (typeof s[d] === 'number') ? s[d] : '';
+          return '<td class="num"><input class="score" type="number" min="0" max="5" step="0.5" ' +
+                 'data-person="' + p.id + '" data-dim="' + d + '" value="' + val + '" placeholder="0-5"></td>';
+        }).join('') +
+        '<td class="num subtotal" id="sub-' + p.id + '">' + personScore(p.id).toFixed(1) + '</td>';
+      tbody.appendChild(tr);
+      var nr = document.createElement('tr');
+      nr.className = 'note-row';
+      nr.id = 'note-row-' + p.id;
+      nr.style.display = 'none';
+      var td = document.createElement('td');
+      td.colSpan = 6;
+      var view = document.createElement('div');
+      view.className = 'note-view' + (s.note ? '' : ' empty');
+      view.id = 'note-view-' + p.id;
+      view.textContent = s.note || '尚無備註——切到「編輯模式」後即可填寫';
+      var ta = document.createElement('textarea');
+      ta.className = 'note';
+      ta.dataset.person = p.id;
+      ta.placeholder = '填入 ' + p.name + ' 的觀察事例或評分依據';
+      ta.value = s.note || '';
+      td.appendChild(view);
+      td.appendChild(ta);
+      nr.appendChild(td);
+      tbody.appendChild(nr);
+    });
+  }
+
+  function buildCompositeTable() {
+    var tbody = document.querySelector('#compositeTable tbody');
+    var techOrder = PEOPLE.slice().sort(function (a, b) { return b.tech - a.tech; });
+    var techRank = {};
+    techOrder.forEach(function (p, i) { techRank[p.id] = i + 1; });
+
+    var rows = PEOPLE.map(function (p) {
+      var manual = personScore(p.id);
+      return { p: p, manual: manual, total: p.tech + manual };
+    }).sort(function (a, b) { return b.total - a.total || b.p.tech - a.p.tech; });
+
+    tbody.innerHTML = '';
+    rows.forEach(function (r, i) {
+      var rank = i + 1;
+      var diff = techRank[r.p.id] - rank;
+      var delta = '－';
+      if (diff > 0) delta = '<span class="delta-up">上升 ' + diff + '</span>';
+      if (diff < 0) delta = '<span class="delta-dn">下降 ' + (-diff) + '</span>';
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td class="rk">' + rank + '</td>' +
+        '<td><b>' + r.p.name + '</b></td>' +
+        '<td class="num">' + r.p.tech + '</td>' +
+        '<td class="num">' + r.manual.toFixed(1) + '</td>' +
+        '<td class="num total">' + r.total.toFixed(1) + '</td>' +
+        '<td>' + delta + '</td>' +
+        '<td style="font-size:12.5px; color:var(--ink-2)">' + r.p.role + '</td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById('manualTable').addEventListener('input', function (e) {
+    var t = e.target;
+    var id = t.dataset.person;
+    if (!id) return;
+    scores[id] = scores[id] || {};
+    if (t.classList.contains('score')) {
+      var v = clamp(t.value);
+      if (v === null) { delete scores[id][t.dataset.dim]; }
+      else { scores[id][t.dataset.dim] = v; if (String(v) !== t.value) t.value = v; }
+      document.getElementById('sub-' + id).textContent = personScore(id).toFixed(1);
+    } else if (t.classList.contains('note')) {
+      scores[id].note = t.value;
+      var view = document.getElementById('note-view-' + id);
+      if (view) {
+        view.textContent = t.value || '尚無備註——切到「編輯模式」後即可填寫';
+        view.classList.toggle('empty', !t.value);
+      }
+      autosizeNote(t);
+    }
+    lsSet(LS_SCORES, scores);
+    buildCompositeTable();
+  });
+  document.getElementById('manualTable').addEventListener('click', function (e) {
+    var cell = e.target.closest('td.ptoggle');
+    if (!cell) return;
+    var row = document.getElementById('note-row-' + cell.dataset.person);
+    row.style.display = row.style.display === 'none' ? '' : 'none';
+    if (row.style.display === '' && document.body.classList.contains('editing')) {
+      var ta = row.querySelector('textarea');
+      autosizeNote(ta);
+      ta.focus();
+    }
+  });
+  function autosizeNote(ta) {
+    ta.style.height = 'auto';
+    ta.style.height = (ta.scrollHeight + 4) + 'px';
+  }
+
+  /* 規劃一致性備註 */
+  var driftAttr = lsGet(LS_DRIFT);
+  function buildDriftControls() {
+    document.querySelectorAll('#driftTable tbody tr[data-drift]').forEach(function (tr) {
+      var id = tr.dataset.drift;
+      var saved = driftAttr[id] || {};
+      var cells = tr.querySelectorAll('td');
+      var noteCell = cells[cells.length - 1];
+      var ta = document.createElement('textarea');
+      ta.className = 'note';
+      ta.dataset.drift = id;
+      ta.placeholder = '填入判讀結論（假訊號或規劃失準）';
+      ta.value = saved.note || '';
+      noteCell.appendChild(ta);
+    });
+  }
+  document.getElementById('driftTable').addEventListener('input', function (e) {
+    var t = e.target;
+    var id = t.dataset.drift;
+    if (!id) return;
+    driftAttr[id] = driftAttr[id] || {};
+    driftAttr[id].note = t.value;
+    lsSet(LS_DRIFT, driftAttr);
+  });
+
+  /* 時程圖點擊高亮 */
+  document.querySelectorAll('.gantt').forEach(function (g) {
+    g.addEventListener('click', function (e) {
+      var row = e.target.closest('.g-row');
+      if (!row) return;
+      var was = row.classList.contains('hl');
+      g.querySelectorAll('.g-row.hl').forEach(function (r) { r.classList.remove('hl'); });
+      g.classList.remove('has-hl');
+      if (!was) { row.classList.add('hl'); g.classList.add('has-hl'); }
+    });
+  });
+
+  /* 文字編輯模式 */
+  var edits = lsGet(LS_EDITS);
+  if (!localStorage.getItem('bccs-pos-edit-reset')) {
+    Object.keys(edits).forEach(function (k) {
+      if (k.indexOf('pos-') === 0 || k.indexOf('fold-') === 0) delete edits[k];
+    });
+    localStorage.setItem(LS_EDITS, JSON.stringify(edits));
+    localStorage.setItem('bccs-pos-edit-reset', '1');
+  }
+  Object.keys(edits).forEach(function (key) {
+    var el = document.querySelector('[data-edit="' + key + '"]');
+    if (el) el.innerHTML = edits[key];
+  });
+
+  var editBtn = document.getElementById('editBtn');
+  var editing = false;
+  editBtn.addEventListener('click', function () {
+    editing = !editing;
+    document.body.classList.toggle('editing', editing);
+    editBtn.classList.toggle('on', editing);
+    editBtn.textContent = editing ? '編輯模式：開（點任何虛線框文字即可修改）' : '編輯模式：關';
+    document.querySelectorAll('[data-edit]').forEach(function (el) {
+      el.contentEditable = editing ? 'true' : 'false';
+    });
+    if (editing) {
+      document.querySelectorAll('tr.note-row textarea.note').forEach(autosizeNote);
+    }
+  });
+  document.addEventListener('input', function (e) {
+    var el = e.target.closest && e.target.closest('[data-edit]');
+    if (!el || !editing) return;
+    edits[el.dataset.edit] = el.innerHTML;
+    lsSet(LS_EDITS, edits);
+  });
+
+  /* 匯出、匯入、重設 */
+  document.getElementById('exportBtn').addEventListener('click', function () {
+    var payload = { exportedAt: new Date().toISOString(), scores: scores, edits: edits, drift: driftAttr };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'bccs-dashboard-填寫內容.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  document.getElementById('importFile').addEventListener('change', function (e) {
+    var f = e.target.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var payload = JSON.parse(reader.result);
+        if (payload.scores) { scores = payload.scores; lsSet(LS_SCORES, scores); }
+        if (payload.drift)  { driftAttr = payload.drift; lsSet(LS_DRIFT, driftAttr); }
+        if (payload.edits) {
+          edits = payload.edits;
+          lsSet(LS_EDITS, edits);
+          Object.keys(edits).forEach(function (key) {
+            var el = document.querySelector('[data-edit="' + key + '"]');
+            if (el) el.innerHTML = edits[key];
+          });
+        }
+        location.reload();
+      } catch (err) {
+        alert('匯入失敗：檔案格式不正確');
+      }
+    };
+    reader.readAsText(f);
+    e.target.value = '';
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', function () {
+    if (!confirm('確定要清除所有評分、歸因與文字編輯內容？此動作無法復原。')) return;
+    localStorage.removeItem(LS_SCORES);
+    localStorage.removeItem(LS_EDITS);
+    localStorage.removeItem(LS_DRIFT);
+    location.reload();
+  });
+
+  /* 自訂提示框（即時顯示） */
+  var tip = document.createElement('div');
+  tip.className = 'tipbox';
+  document.body.appendChild(tip);
+  function moveTip(e) {
+    var x = e.clientX + 14, y = e.clientY + 14;
+    var r = tip.getBoundingClientRect();
+    if (x + r.width > window.innerWidth - 8) x = e.clientX - r.width - 10;
+    if (y + r.height > window.innerHeight - 8) y = e.clientY - r.height - 10;
+    tip.style.left = x + 'px';
+    tip.style.top = y + 'px';
+  }
+  document.addEventListener('mouseover', function (e) {
+    var el = e.target.closest && e.target.closest('[data-tip]');
+    if (!el) { tip.style.display = 'none'; return; }
+    tip.textContent = el.getAttribute('data-tip');
+    tip.style.display = 'block';
+    moveTip(e);
+  });
+  document.addEventListener('mousemove', function (e) {
+    if (tip.style.display === 'block') moveTip(e);
+  });
+
+  /* 架構圖上下游高亮（簡明版與詳細版共用） */
+  document.querySelectorAll('svg.archmap').forEach(function (archSvg) {
+    archSvg.addEventListener('mouseover', function (e) {
+      var node = e.target.closest('g.an');
+      if (!node) return;
+      var id = node.dataset.node;
+      archSvg.classList.add('focus');
+      archSvg.querySelectorAll('.ae, .an').forEach(function (el) { el.classList.remove('on'); });
+      node.classList.add('on');
+      archSvg.querySelectorAll('.ae').forEach(function (edge) {
+        if (edge.dataset.from === id || edge.dataset.to === id) {
+          edge.classList.add('on');
+          var other = edge.dataset.from === id ? edge.dataset.to : edge.dataset.from;
+          var g = archSvg.querySelector('g.an[data-node="' + other + '"]');
+          if (g) g.classList.add('on');
+        }
+      });
+    });
+    archSvg.addEventListener('mouseleave', function () {
+      archSvg.classList.remove('focus');
+      archSvg.querySelectorAll('.ae, .an').forEach(function (el) { el.classList.remove('on'); });
+    });
+  });
+
+  /* 隱藏分頁切換 */
+  document.querySelectorAll('[data-goto]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      var target = this.dataset.goto;
+      document.querySelectorAll('section.tab').forEach(function (sec) { sec.classList.remove('on'); });
+      tabs.querySelectorAll('button').forEach(function (b) {
+        b.classList.toggle('on', b.dataset.tab === target);
+      });
+      document.getElementById(target).classList.add('on');
+      window.scrollTo(0, 0);
+    });
+  });
+
+  buildManualTable();
+  buildCompositeTable();
+  buildDriftControls();
+})();
+</script>
+</body>
+</html>
