@@ -240,7 +240,8 @@
   .fus-total { text-align: right; flex-shrink: 0; }
   .fus-total b { display: block; font-size: 21px; line-height: 1.15; font-variant-numeric: tabular-nums; }
   .fus-total span.cap { font-size: 11px; color: var(--ink-3); display: block; margin-bottom: 3px; }
-  .fus-svg { width: 100%; max-width: 268px; display: block; margin: 0 auto 4px; }
+  .fus-duo { display: flex; gap: 6px; justify-content: center; align-items: center; margin: 6px 0 4px; }
+  .fus-duo svg { width: 50%; max-width: 164px; height: auto; }
   .fus-meters { display: grid; gap: 5px; margin: 2px 0 10px; }
   .fus-meter { display: grid; grid-template-columns: 58px 1fr 62px; gap: 8px; align-items: center; font-size: 11.5px; color: var(--ink-2); }
   .fus-meter .bar i.tech { background: var(--c-blue); }
@@ -884,14 +885,14 @@
 
   <h2>技術與特質綜合能力圖</h2>
   <p class="h2-note">
-    每張圖把同一個人的兩種證據放在同一個座標上：藍色區是「技術評分」分頁的五個版本庫維度，青色區是上方表格的六個特質維度，全部以零至五分同尺度呈現。
+    每人兩張小圖並排：左圖是「技術評分」分頁五個版本庫維度（藍），右圖是上方表格六個特質維度（青），全部以零至五分同尺度呈現。
     卡片依總分排序；上方表格的特質分數修改後，圖形與排序會即時重算。
-    判讀方式：往藍色偏的人先給技術深水區任務，往青色偏的人先給協調與帶人任務，兩區都飽滿的人是建置與管理雙軌候選。
+    判讀方式：左圖飽滿的人先給技術深水區任務，右圖飽滿的人先給協調與帶人任務，兩圖都飽滿的人是建置與管理雙軌候選。
   </p>
   <div class="fus-legend">
-    <span><i style="background:var(--c-blue)"></i>技術維度（版本庫證據，五軸）</span>
-    <span><i style="background:var(--c-teal)"></i>個人特質（管理觀察，六軸）</span>
-    <span style="color:var(--ink-3)">圖內虛線為兩區分界；頂點圓點代表各軸實得分數</span>
+    <span><i style="background:var(--c-blue)"></i>左圖：技術維度（版本庫證據，五軸）</span>
+    <span><i style="background:var(--c-teal)"></i>右圖：個人特質（管理觀察，六軸）</span>
+    <span style="color:var(--ink-3)">頂點圓點代表各軸實得分數</span>
   </div>
   <div id="hexSummary" class="hex-summary"></div>
   <div id="hexGrid" class="hex-grid"></div>
@@ -2040,65 +2041,47 @@
     var s = scores[p.id] || {};
     return DIMS.map(function (d) { return n(s[d]); });
   }
-  function fusionRadar(techVals, traitVals) {
-    var cx = 116, cy = 104, r = 62, N = 11;
-    function ang(i) { return -Math.PI / 2 + i * Math.PI * 2 / N; }
+  function miniRadar(axes, vals, fill, stroke, nodata) {
+    var cx = 84, cy = 80, r = 46, N = axes.length;
     function pt(i, ratio) {
-      var a = ang(i);
+      var a = -Math.PI / 2 + i * Math.PI * 2 / N;
       return [cx + Math.cos(a) * r * ratio, cy + Math.sin(a) * r * ratio];
     }
-    function fmt(p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }
-    function ringPoly(ratio) {
-      var out = [];
-      for (var i = 0; i < N; i++) out.push(fmt(pt(i, ratio)));
-      return out.join(' ');
+    function fmt(q) { return q[0].toFixed(1) + ',' + q[1].toFixed(1); }
+    var out = '';
+    for (var lv = 1; lv <= 5; lv++) {
+      var ring = [];
+      for (var i = 0; i < N; i++) ring.push(fmt(pt(i, lv / 5)));
+      out += '<polygon points="' + ring.join(' ') + '" fill="none" stroke="#e3e6ea" stroke-width="' + (lv === 5 ? 1.1 : 0.7) + '"/>';
     }
-    function arcPt(a) { return [cx + Math.cos(a) * r, cy + Math.sin(a) * r]; }
-    var half = Math.PI / N;
-    var bTech0 = ang(0) - half, bTech1 = ang(4) + half;
-    function wedge(a0, a1, fill) {
-      var large = (a1 - a0) > Math.PI ? 1 : 0;
-      return '<path d="M ' + cx + ' ' + cy + ' L ' + fmt(arcPt(a0)) + ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' + fmt(arcPt(a1)) + ' Z" fill="' + fill + '"/>';
+    for (var j = 0; j < N; j++) {
+      var sp = pt(j, 1);
+      out += '<line x1="' + cx + '" y1="' + cy + '" x2="' + sp[0].toFixed(1) + '" y2="' + sp[1].toFixed(1) + '" stroke="#e3e6ea" stroke-width="0.7"/>';
     }
-    var sectors = wedge(bTech0, bTech1, 'hsla(215,42%,44%,0.08)') + wedge(bTech1, bTech0 + Math.PI * 2, 'hsla(178,42%,34%,0.08)');
-    var dividers = [bTech0, bTech1].map(function (a) {
-      return '<line x1="' + cx + '" y1="' + cy + '" x2="' + arcPt(a)[0].toFixed(1) + '" y2="' + arcPt(a)[1].toFixed(1) + '" stroke="#b7bdc4" stroke-width="1" stroke-dasharray="3,3"/>';
-    }).join('');
-    var rings = [1, 2, 3, 4, 5].map(function (level) {
-      return '<polygon points="' + ringPoly(level / 5) + '" fill="none" stroke="#e3e6ea" stroke-width="' + (level === 5 ? 1.2 : 0.8) + '"/>';
-    }).join('');
-    var spokes = '';
-    for (var i = 0; i < N; i++) {
-      var sp = pt(i, 1);
-      spokes += '<line x1="' + cx + '" y1="' + cy + '" x2="' + sp[0].toFixed(1) + '" y2="' + sp[1].toFixed(1) + '" stroke="#e3e6ea" stroke-width="0.8"/>';
-    }
-    function petal(vals, offset, fill, stroke) {
-      var hasValue = vals.some(function (v) { return v > 0; });
-      if (!hasValue) return '';
-      var pts = [fmt([cx, cy])];
-      var dots = '';
+    if (nodata) {
+      out += '<text x="' + cx + '" y="' + (cy + 3) + '" text-anchor="middle" font-size="9" fill="hsl(8,48%,46%)">查無產出</text>';
+    } else {
+      var pts = vals.map(function (v, i) { return fmt(pt(i, Math.max(0, Math.min(5, v)) / 5)); });
+      out += '<polygon points="' + pts.join(' ') + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.8" stroke-linejoin="round"/>';
       vals.forEach(function (v, i) {
-        var ratio = Math.max(0, Math.min(5, v)) / 5;
-        var p = pt(offset + i, ratio);
-        pts.push(fmt(p));
-        if (v > 0) dots += '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="2" fill="' + stroke + '"/>';
+        var q = pt(i, Math.max(0, Math.min(5, v)) / 5);
+        out += '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="1.8" fill="' + stroke + '"/>';
       });
-      return '<polygon points="' + pts.join(' ') + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.8" stroke-linejoin="round"/>' + dots;
     }
-    var techPetal = petal(techVals, 0, 'hsla(215,42%,44%,0.30)', 'hsl(215,42%,40%)');
-    var traitPetal = petal(traitVals, 5, 'hsla(178,42%,38%,0.30)', 'hsl(178,42%,32%)');
-    var noTech = techVals.every(function (v) { return !v; });
-    var emptyNote = noTech ? '<text x="' + (cx + r * 0.52).toFixed(1) + '" y="' + (cy - r * 0.26).toFixed(1) + '" text-anchor="middle" font-size="9" fill="hsl(8,48%,46%)">查無技術產出</text>' : '';
-    var allAxes = TECH_AXES.concat(HEX_AXES);
-    var labels = allAxes.map(function (axis, i) {
-      var a = ang(i);
-      var p = pt(i, 1.16);
+    axes.forEach(function (axis, i) {
+      var a = -Math.PI / 2 + i * Math.PI * 2 / N;
+      var q = pt(i, 1.2);
       var anchor = Math.cos(a) > 0.25 ? 'start' : Math.cos(a) < -0.25 ? 'end' : 'middle';
-      var dy = Math.sin(a) > 0.55 ? 7 : Math.sin(a) < -0.55 ? -3 : 2.5;
-      var color = i < 5 ? 'hsl(215,42%,38%)' : 'hsl(178,42%,28%)';
-      return '<text x="' + p[0].toFixed(1) + '" y="' + (p[1] + dy).toFixed(1) + '" text-anchor="' + anchor + '" font-size="9.5" font-weight="600" fill="' + color + '">' + axis.label + '</text>';
-    }).join('');
-    return '<svg class="fus-svg" viewBox="0 0 232 208" aria-hidden="true">' + sectors + rings + spokes + dividers + techPetal + traitPetal + emptyNote + labels + '</svg>';
+      var dy = Math.sin(a) > 0.55 ? 7 : Math.sin(a) < -0.55 ? -2 : 2.5;
+      out += '<text x="' + q[0].toFixed(1) + '" y="' + (q[1] + dy).toFixed(1) + '" text-anchor="' + anchor + '" font-size="8.5" font-weight="600" fill="' + stroke + '">' + axis.label + '</text>';
+    });
+    return '<svg viewBox="-14 0 196 158" aria-hidden="true">' + out + '</svg>';
+  }
+  function duoCharts(p, traitVals) {
+    return '<div class="fus-duo">' +
+      miniRadar(TECH_AXES, p.techDims, 'hsla(215,42%,44%,0.30)', 'hsl(215,42%,40%)', p.nodata) +
+      miniRadar(HEX_AXES, traitVals, 'hsla(178,42%,38%,0.30)', 'hsl(178,42%,32%)', false) +
+      '</div>';
   }
   function tendency(p, manual) {
     if (p.nodata) return { label: '證據不足', cls: 'stalled' };
@@ -2116,7 +2099,6 @@
     }).sort(function (a, b) { return b.total - a.total || b.p.tech - a.p.tech; });
     rows.forEach(function (r) {
       var p = r.p;
-      var s = scores[p.id] || {};
       var track = TRACK_META[p.track];
       var tend = tendency(p, r.manual);
       var card = document.createElement('div');
@@ -2126,12 +2108,12 @@
           '<div><div class="name">' + safe(p.name) + '</div><span class="chip ' + track.cls + ' sm">' + track.label + '</span></div>' +
           '<div class="fus-total"><b>' + r.total.toFixed(1) + '</b><span class="cap">總分／55</span><span class="chip ' + tend.cls + ' sm">' + tend.label + '</span></div>' +
         '</div>' +
-        fusionRadar(p.techDims, r.traits) +
+        duoCharts(p, r.traits) +
         '<div class="fus-meters">' +
           '<div class="fus-meter"><span>技術證據</span><div class="bar"><i class="tech" style="width:' + (p.tech / 25 * 100).toFixed(0) + '%"></i></div><span class="v">' + p.tech + '／25</span></div>' +
           '<div class="fus-meter"><span>個人特質</span><div class="bar"><i class="trait" style="width:' + (r.manual / 30 * 100).toFixed(0) + '%"></i></div><span class="v">' + r.manual.toFixed(1) + '／30</span></div>' +
         '</div>' +
-        '<div class="hex-note">' + safe(s.note || '尚未匯入或填寫特質備註') + '</div>';
+        '<div class="hex-note">' + safe(SHORT_DEFAULT_NOTES[p.id] || '尚無摘要') + '</div>';
       grid.appendChild(card);
     });
   }
