@@ -119,6 +119,7 @@
   .gantt.has-hl .g-row:not(.hl) .g-bar { opacity: 0.18 !important; }
   .gantt.has-hl .g-row:not(.hl) .g-name { opacity: 0.45; }
   .g-row .g-name { font-size: 12.5px; text-align: right; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .g-section { display: grid; grid-template-columns: 250px 1fr; gap: 12px; padding: 12px 0 4px; border-top: 1px solid var(--line); font-size: 12px; font-weight: 700; color: var(--c-violet); }
   .g-track { position: relative; height: 16px; background: repeating-linear-gradient(90deg, transparent 0, transparent calc(100%/17 - 1px), var(--line) calc(100%/17 - 1px), var(--line) calc(100%/17)); border-radius: 3px; }
   .g-bar { position: absolute; top: 2px; height: 12px; border-radius: 3px; min-width: 8px; }
   .g-mark { position: absolute; top: -3px; width: 2px; height: 22px; background: var(--ink); }
@@ -152,6 +153,15 @@
   .road .meta { font-size: 12px; color: var(--ink-3); margin: 2px 0 8px; }
   .road ul { margin-left: 18px; font-size: 13px; color: var(--ink-2); }
   .road li { margin-bottom: 3px; }
+
+  .sys-split { display: grid; grid-template-columns: 1fr 1.15fr 1fr 1fr; gap: 12px; margin-top: 14px; }
+  .sys-group { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; border-top: 3px solid var(--c-teal); }
+  .sys-group.internal { border-top-color: var(--c-blue); }
+  .sys-group.platform { border-top-color: var(--c-violet); }
+  .sys-group.paused { border-top-color: var(--c-red); }
+  .sys-group h3 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  .sys-group .meta { color: var(--ink-3); font-size: 12px; margin-bottom: 8px; }
+  .sys-list { display: flex; flex-wrap: wrap; gap: 6px; }
 
   .risk { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--c-red); border-radius: 8px; padding: 14px 18px; margin-bottom: 10px; }
   .risk.warn { border-left-color: var(--c-amber); }
@@ -212,6 +222,21 @@
   #compositeTable td.rk { font-weight: 700; }
   .delta-up { color: var(--c-teal); font-size: 12px; }
   .delta-dn { color: var(--c-red); font-size: 12px; }
+  .hex-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0; }
+  .hex-stat { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+  .hex-stat b { display: block; font-size: 22px; color: var(--c-teal); margin-bottom: 2px; }
+  .hex-stat span { color: var(--ink-3); font-size: 12px; }
+  .hex-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+  .hex-card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+  .hex-head { display: flex; justify-content: space-between; gap: 8px; align-items: start; margin-bottom: 8px; }
+  .hex-head b { font-size: 15px; }
+  .hex-head span { color: var(--ink-3); font-size: 12px; text-align: right; }
+  .hex-svg { width: 100%; max-width: 240px; display: block; margin: 0 auto 8px; }
+  .hex-note { color: var(--ink-2); font-size: 12.5px; line-height: 1.6; }
+  .insight-grid { display: grid; grid-template-columns: 1fr 1.25fr; gap: 12px; margin-top: 12px; }
+  .risk-high { color: var(--c-red); font-weight: 700; }
+  .risk-mid { color: var(--c-amber); font-weight: 700; }
+  .risk-low { color: var(--c-teal); font-weight: 700; }
 
   body.editing [data-edit] { outline: 1.5px dashed var(--c-amber); outline-offset: 3px; border-radius: 4px; min-height: 1em; }
   body.editing [data-edit]:focus { outline: 2px solid var(--c-amber); background: var(--c-amber-bg); }
@@ -234,6 +259,8 @@
   footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 12px; }
   @media (max-width: 900px) {
     .kpi-row { grid-template-columns: repeat(3, 1fr); }
+    .sys-split { grid-template-columns: 1fr; }
+    .hex-summary, .hex-grid, .insight-grid { grid-template-columns: 1fr; }
     .rank-card { grid-template-columns: 48px 1fr; }
     .rank-evi, .dims { grid-column: 1 / -1; }
     .road-grid { grid-template-columns: 1fr; }
@@ -255,10 +282,10 @@
 <nav class="tabs" id="tabs">
   <button data-tab="t-overview" class="on">總覽</button>
   <button data-tab="t-rank">技術評分</button>
-  <button data-tab="t-drift">規劃一致性</button>
+  <button data-tab="t-drift" hidden>規劃一致性</button>
   <button data-tab="t-manual">綜合項目評分</button>
   <button data-tab="t-roadmap">公司系統架構</button>
-  <button data-tab="t-risks">風險建議</button>
+  <button data-tab="t-risks">管理行動</button>
   <button data-tab="t-position">漢昕軟體開發定位</button>
 </nav>
 
@@ -274,20 +301,56 @@
 <!-- ==================== 總覽 ==================== -->
 <section class="tab on" id="t-overview">
   <h2>總覽指標</h2>
-  <p class="h2-note">盤點範圍排除流程測試庫（TestCICD、TestCICD2）；弱點管理平台（Dylan）與文件知識庫系統（Wiwi）已於 2026-06-11 補列進配置。停擺三案：人資考勤、資安健診、企業入口（單一登入轉型）。版本庫總數含待廢除的 EIP 舊系統（BCCS-EIP-VB.NET）。</p>
   <div class="kpi-row" style="grid-template-columns: repeat(5, 1fr);">
-    <div class="kpi k-teal"><div class="num">8</div><div class="lab">開發中</div></div>
+    <div class="kpi k-teal"><div class="num">4</div><div class="lab">開發中專案</div></div>
+    <div class="kpi k-violet"><div class="num">2</div><div class="lab">底層共用能力</div></div>
     <div class="kpi k-blue"><div class="num">3</div><div class="lab">進入維運</div></div>
-    <div class="kpi k-red"><div class="num">3</div><div class="lab">停擺</div></div>
-    <div class="kpi k-amber"><div class="num">1</div><div class="lab">待廢除（EIP 舊系統）</div></div>
-    <div class="kpi k-violet"><div class="num">14</div><div class="lab">版本庫總數</div></div>
+    <div class="kpi k-red"><div class="num">2</div><div class="lab">停擺</div></div>
+    <div class="kpi k-amber"><div class="num">1</div><div class="lab">轉型中（EIP 入口網）</div></div>
+  </div>
+
+  <div class="sys-split">
+    <div class="sys-group">
+      <h3>對外銷售產品</h3>
+      <div class="meta">4 套</div>
+      <div class="sys-list">
+        <span class="chip active">advMDR 戰情中心</span>
+        <span class="chip active">弱掃管理平台</span>
+        <span class="chip active">資安大師</span>
+        <span class="chip active">社交工程</span>
+      </div>
+    </div>
+    <div class="sys-group internal">
+      <h3>對內系統</h3>
+      <div class="meta">4 套</div>
+      <div class="sys-list">
+        <span class="chip maint">專案管理系統</span>
+        <span class="chip maint">生成式報告</span>
+        <span class="chip maint">文件知識庫系統</span>
+        <span class="chip maint">公司官網</span>
+      </div>
+    </div>
+    <div class="sys-group platform">
+      <h3>底層共用能力</h3>
+      <div class="meta">2 套，不列入專案數</div>
+      <div class="sys-list">
+        <span class="chip shadow">模型推論平台</span>
+        <span class="chip shadow">代理端點服務</span>
+      </div>
+    </div>
+    <div class="sys-group paused">
+      <h3>停擺對內</h3>
+      <div class="meta">2 套</div>
+      <div class="sys-list">
+        <span class="chip stalled">資安健診</span>
+        <span class="chip stalled">人資考勤</span>
+      </div>
+    </div>
   </div>
 
   <h2>專案時程總覽</h2>
   <p class="h2-note">
-    依狀態分組（開發中、交接中、維運中，停擺殿後），組內依開始月份排序；一個專案一個顏色（同一飽和度的五個色相家族做明度階層，顏色不代表狀態，狀態見列首標籤）。
-    橫軸為 2025-02 至 2026-07。
-    分段長條代表負責人或階段轉換（如專案管理系統、生成式報告系統），滑鼠移到任一色段會顯示該階段的負責人與起訖；黑色刻線為上線時點。
+    專案與底層共用能力分開列；滑鼠移到色段可看負責人與起訖，黑色刻線為上線時點。
     點擊任一列可凸顯該專案，再點一次取消。
   </p>
   <div class="gantt">
@@ -303,14 +366,12 @@
       </div>
     </div>
     <div class="g-row"><div class="g-name">弱點管理平台 <span class="chip active sm">開發中</span></div><div class="g-track"><div class="g-bar" data-tip="Dylan 獨力開發（2026-01 起）" style="left:64.7%; width:31.2%; background:hsl(262,32%,50%)"></div></div></div>
-    <div class="g-row"><div class="g-name">模型推論平台 <span class="chip active sm">開發中</span></div><div class="g-track"><div class="g-bar" data-tip="Jsnn 開發與維護（2026-01 起）" style="left:64.7%; width:31.2%; background:hsl(178,42%,34%)"></div></div></div>
     <div class="g-row"><div class="g-name">資安大師 <span class="chip active sm">開發中</span></div><div class="g-track">
       <div class="g-bar" data-tip="第一階段：Weiyao 需求與前端（2026-03 至 2026-05）" style="left:77.6%; width:16.6%; background:hsl(178,42%,55%)"></div>
       <div class="g-bar" data-tip="第二階段：Ted 後端接手（2026-06 起），Weiyao 續任需求端" style="left:94.2%; width:1.9%; background:hsl(178,42%,35%)"></div>
     </div></div>
     <div class="g-row"><div class="g-name">文件知識庫系統 <span class="chip active sm">開發中</span></div><div class="g-track"><div class="g-bar" data-tip="Wiwi 獨力開發（2026-03 起）" style="left:77.6%; width:18.3%; background:hsl(262,32%,66%)"></div></div></div>
     <div class="g-row"><div class="g-name">線上評量系統 <span class="chip active sm">開發中</span></div><div class="g-track"><div class="g-bar" data-tip="Zane 訓練用開發（2026-04 起）" style="left:85.9%; width:8.2%; background:hsl(35,52%,70%)"></div></div></div>
-    <div class="g-row"><div class="g-name">代理端點服務 <span class="chip active sm">開發中</span></div><div class="g-track"><div class="g-bar" data-tip="Jsnn 開發（2026-05 起）" style="left:92.4%; width:3.5%; background:hsl(178,42%,64%)"></div></div></div>
     <div class="g-row"><div class="g-name">專案管理系統 <span class="chip handover sm">交接中</span></div><div class="g-track">
       <div class="g-bar" data-tip="第一階段：前團隊開發（2025-07 至 2025-12）" style="left:29.1%; width:35.4%; background:hsl(35,52%,58%)"></div>
       <div class="g-bar" data-tip="第二階段：Ren 輔助開發（2026-02 底至 2026-04-30 上線）" style="left:75.0%; width:13.0%; background:hsl(35,52%,44%)"></div>
@@ -318,7 +379,7 @@
       <div class="g-mark" style="left:88.0%" data-tip="2026-04-30 上線"></div>
     </div></div>
     <div class="g-row"><div class="g-name">advMDR 戰情中心 <span class="chip handover sm">交接中</span></div><div class="g-track">
-      <div class="g-bar" data-tip="第一階段：Jsnn 獨力開發（2026-02 至 2026-05）" style="left:70.6%; width:22.2%; background:hsl(35,52%,30%)"></div>
+      <div class="g-bar" data-tip="第一階段：Jsnn 獨力開發（2025-09 至 2026-05）" style="left:41.2%; width:51.6%; background:hsl(35,52%,30%)"></div>
       <div class="g-bar" data-tip="第二階段：交接期，Jsnn 主力、Nick 接手中（2026-05 底起）" style="left:92.8%; width:3.3%; background:hsl(35,52%,48%)"></div>
     </div></div>
     <div class="g-row"><div class="g-name">社交工程系統 <span class="chip maint sm">維運中</span></div><div class="g-track">
@@ -336,7 +397,10 @@
     </div></div>
     <div class="g-row"><div class="g-name">人資考勤系統 <span class="chip stalled sm">停擺</span></div><div class="g-track"><div class="g-bar" data-tip="Harry 開發（2026-01 至 03，已離職），僅前端" style="left:64.7%; width:15.9%; background:hsl(8,48%,46%)"></div></div></div>
     <div class="g-row"><div class="g-name">資安健診系統 <span class="chip stalled sm">停擺</span></div><div class="g-track"><div class="g-bar" data-tip="Wiwi 開發（2026-01 至 02），實質中止" style="left:64.7%; width:4.4%; background:hsl(8,48%,62%)"></div></div></div>
-    <div class="g-row"><div class="g-name">企業入口（單一登入轉型） <span class="chip stalled sm">停擺</span></div><div class="g-track"><div class="g-bar" data-tip="EIP 廢除後的轉型規劃：登入一次進入全部內部系統；因資料在 NAS、微軟帳戶建置困難，於 2026-01 月初停擺" style="left:58.8%; width:6.4%; background:hsl(8,48%,38%)"></div></div></div>
+    <div class="g-row"><div class="g-name">EIP 企業入口（單一登入轉型） <span class="chip handover sm">轉型中</span></div><div class="g-track"><div class="g-bar" data-tip="EIP 舊系統瘦身轉型：商機與專案拆到專案管理系統，差勤打卡拆到人資系統，EIP 保留為公司唯一入口網" style="left:58.8%; width:6.4%; background:hsl(35,52%,44%)"></div></div></div>
+    <div class="g-section"><div></div><div>底層共用能力（不列入專案數）</div></div>
+    <div class="g-row"><div class="g-name">模型推論平台 <span class="chip shadow sm">共用能力</span></div><div class="g-track"><div class="g-bar" data-tip="Jsnn 開發與維護（2026-01 起）" style="left:64.7%; width:31.2%; background:hsl(262,32%,48%)"></div></div></div>
+    <div class="g-row"><div class="g-name">代理端點服務 <span class="chip shadow sm">共用能力</span></div><div class="g-track"><div class="g-bar" data-tip="Jsnn 開發（2026-05 起）" style="left:92.4%; width:3.5%; background:hsl(262,32%,64%)"></div></div></div>
   </div>
 
   <h2>評分方法與限制</h2>
@@ -350,7 +414,7 @@
       <tr><td>規劃一致性</td><td><span class="chip handover">半自動</span></td><td>早期與近期提交主題的漂移率自動計算，漂移原因由人工歸因（見「規劃一致性」分頁）。</td></tr>
       <tr><td>程式審查品質</td><td><span class="chip stalled">測不到</span></td><td>各庫幾乎無拉取請求流程，無審查紀錄可分析。</td></tr>
       <tr><td>缺陷率與回歸歸因</td><td><span class="chip stalled">測不到</span></td><td>無問題追蹤與提交的關聯資料。</td></tr>
-      <tr><td>大局觀、邏輯、積極主動性、團隊參與度</td><td><span class="chip handover">人工評分補足</span></td><td>量化資料的天然盲區，由「綜合項目評分」分頁人工填寫，與技術評分合併為總排名。</td></tr>
+      <tr><td>個人特質評分</td><td><span class="chip handover">人工評分補足</span></td><td>技術分回答「能不能做」；綜合分回答「適不適合帶方向、主動補位、承擔跨系統風險」。</td></tr>
     </tbody>
   </table>
 </section>
@@ -372,7 +436,7 @@
     </div>
     <div class="rank-evi" data-edit="evi-jsnn">
       <ul>
-        <li>一人同時建置三個平台：戰情中心（<span class="repo">BCCS-SOC-Portal</span>，2026-02 起）、模型推論平台（2026-03 起）、代理端點服務（2026-05 起）</li>
+        <li>一人同時建置三個平台：戰情中心（<span class="repo">BCCS-SOC-Portal</span>，2025-09 起）、模型推論平台（2026-03 起）、代理端點服務（2026-05 起）</li>
         <li>三庫近期提交幾乎全數出自其一人</li>
         <li>分支制度全員最完整：開發、預備、正式三線並行，另有正式部署管線分支</li>
         <li>年度平台活動量四百七十五次，排行人員中最高</li>
@@ -401,7 +465,6 @@
         <li>健診系統八十七筆；文件知識庫系統（<span class="repo">BCCS-AI-Document-RAG</span>）2026-05-27 起獨力開發至今</li>
         <li>三套系統皆從零起建：拖拉式版面、資料繫結、文件產出、檢索增強生成</li>
         <li><b>從零到一的建置能力最強</b></li>
-        <li>弱項：經手系統多由他人接手收尾，健診系統即停在自己手上</li>
       </ul>
     </div>
     <div class="dims">
@@ -424,7 +487,7 @@
       <ul>
         <li>官網共同開發一百三十八筆貢獻</li>
         <li>專案管理系統建立多條功能分支：教學導覽、標註功能等</li>
-        <li>現接手全公司最大代碼庫（<span class="repo">PMS-StandardLifecycle</span>，前後端整合系統）</li>
+        <li>現接手全公司最大程式碼庫（<span class="repo">PMS-StandardLifecycle</span>，前後端整合系統）</li>
         <li>跨前後端，且是少數有「接手大型系統」任務在身的人員</li>
         <li><b>待觀察：</b>近四百筆提交中僅五筆出自其手，交接深度不足</li>
       </ul>
@@ -508,9 +571,9 @@
       <div class="dim"><span>產出量</span><div class="bar"><i style="width:60%"></i></div><span class="v">3</span></div>
       <div class="dim"><span>技術廣度</span><div class="bar"><i style="width:40%"></i></div><span class="v">2</span></div>
       <div class="dim"><span>獨立交付</span><div class="bar"><i style="width:60%"></i></div><span class="v">3</span></div>
-      <div class="dim"><span>流程成熟度</span><div class="bar"><i style="width:60%"></i></div><span class="v">3</span></div>
+      <div class="dim"><span>流程成熟度</span><div class="bar"><i style="width:100%"></i></div><span class="v">5</span></div>
       <div class="dim"><span>接手維運</span><div class="bar"><i style="width:60%"></i></div><span class="v">3</span></div>
-      <div class="total-line">技術分 14／25</div>
+      <div class="total-line">技術分 16／25</div>
     </div>
   </div>
 
@@ -752,48 +815,83 @@
     <thead><tr><th style="width:80px">步驟</th><th>動作</th></tr></thead>
     <tbody>
       <tr><td>一</td><td>由上而下看天秤與「系統解讀」：往左沉的系統先讀解讀，判斷偏離是假訊號（規格驅動、接手換人、樣本太小）還是真的規劃失準；判斷結果寫進備註欄。</td></tr>
-      <tr><td>二</td><td>判定為「規劃失準」的系統，作為該負責人「大局觀」評分的扣分參考（在綜合項目評分分頁填寫）；假訊號則不影響個人評分。</td></tr>
+      <tr><td>二</td><td>判定為「規劃失準」的系統，作為該負責人「大局」評分的扣分參考（在綜合項目評分分頁填寫）；假訊號則不影響個人評分。</td></tr>
     </tbody>
   </table>
 </section>
 
 <!-- ==================== 綜合項目評分 ==================== -->
 <section class="tab" id="t-manual">
-  <h2>綜合項目評分（請直接填寫）</h2>
+  <h2>綜合項目評分（個人特質）</h2>
   <p class="h2-note">
-    四個維度各五分（可填 0 至 5，支援 0.5）：大局觀、邏輯、積極主動性、團隊參與度。
-    填寫後自動儲存並即時更新下方總排名；總分為技術分（25）加綜合項目評分（20），滿分四十五。
+    這裡不重評產出、技術與架構能力；那些看「技術評分」分頁。
+    這裡只評個人特質：是否適合帶人、看到不對會不會主動提、是否有大局觀、是否只處理跟自己相關的事。
   </p>
+  <div class="hex-summary">
+    <div class="hex-stat"><b>技術評分</b><span>版本庫證據：產出、技術廣度、獨立交付、流程成熟度、接手維運</span></div>
+    <div class="hex-stat"><b>綜合評分</b><span>管理觀察：領導、主動、大局、協作、責任、成長</span></div>
+    <div class="hex-stat"><b>風險判讀</b><span>技術集中度加上特質缺口，決定交接與培養方向</span></div>
+  </div>
   <table id="manualTable">
     <thead>
       <tr>
         <th style="width:200px">人員（點擊展開備註）</th>
-        <th class="num" style="width:100px">大局觀</th>
-        <th class="num" style="width:100px">邏輯</th>
-        <th class="num" style="width:110px">積極主動性</th>
-        <th class="num" style="width:110px">團隊參與度</th>
-        <th class="num" style="width:90px">小計／20</th>
+        <th class="num" style="width:85px">領導</th>
+        <th class="num" style="width:85px">主動</th>
+        <th class="num" style="width:85px">大局</th>
+        <th class="num" style="width:85px">協作</th>
+        <th class="num" style="width:85px">責任</th>
+        <th class="num" style="width:85px">成長</th>
+        <th class="num" style="width:90px">小計／30</th>
       </tr>
     </thead>
     <tbody><!-- 由程式產生 --></tbody>
   </table>
 
-  <h2>總排名（技術分＋綜合項目評分，即時計算）</h2>
-  <p class="h2-note">「位移」欄顯示相對於純技術排名的變化；綜合項目評分未填時以 0 計。</p>
+  <h2>總排名（技術證據分＋個人特質分，即時計算）</h2>
+  <p class="h2-note">「位移」欄顯示相對於純技術排名的變化；個人特質分未填時以 0 計。</p>
   <table id="compositeTable">
     <thead>
       <tr>
         <th style="width:60px">排名</th>
         <th style="width:90px">人員</th>
         <th class="num" style="width:100px">技術分／25</th>
-        <th class="num" style="width:130px">綜合項目評分／20</th>
-        <th class="num" style="width:90px">總分／45</th>
+        <th class="num" style="width:130px">個人特質分／30</th>
+        <th class="num" style="width:90px">總分／55</th>
         <th style="width:90px">位移</th>
         <th>目前配置</th>
       </tr>
     </thead>
     <tbody><!-- 由程式產生 --></tbody>
   </table>
+
+  <h2>個人特質六角圖</h2>
+  <p class="h2-note">
+    六角圖只看個人特質，不混入技術產出。技術能力請回到「技術評分」分頁判讀。
+  </p>
+  <div id="hexSummary" class="hex-summary"></div>
+  <div id="hexGrid" class="hex-grid"></div>
+
+  <h2>公司開發戰力與風險</h2>
+  <p class="h2-note">
+    風險判讀要把技術集中度與個人特質一起看。高技術人員若不主動交接、文件化或培養備援，會變成公司單點風險。
+  </p>
+  <div class="insight-grid">
+    <div>
+      <h3>個人特質覆蓋</h3>
+      <table id="capabilityTable">
+        <thead><tr><th>特質軸</th><th class="num">平均</th><th>高分人員</th><th>判讀</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div>
+      <h3>單點風險與方向調整</h3>
+      <table id="riskTable">
+        <thead><tr><th style="width:150px">能力或系統</th><th style="width:90px">主責</th><th style="width:90px">備援</th><th style="width:70px">風險</th><th>調整方向</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
 </section>
 
 <!-- ==================== 公司系統架構 ==================== -->
@@ -811,10 +909,10 @@
       <rect x="16" y="230" width="1152" height="112" rx="10" fill="hsl(178,42%,96%)" stroke="hsl(178,42%,82%)"/>
       <rect x="16" y="384" width="1152" height="202" rx="10" fill="hsl(262,32%,97%)" stroke="hsl(262,32%,87%)"/>
       <rect x="16" y="596" width="1152" height="112" rx="10" fill="hsl(35,52%,96%)" stroke="hsl(35,52%,84%)"/>
-      <g class="an" data-node="sso" data-tip="EIP 轉型目標：登入一次進入下方所有內部系統；因資料在 NAS、微軟帳戶建置唯一入口有難度，2026-01 月初停擺" style="cursor:pointer">
-      <rect x="16" y="14" width="1148" height="48" rx="8" fill="hsl(8,48%,95%)" stroke="hsl(8,48%,46%)" stroke-width="1.5" stroke-dasharray="5,4"/>
-      <text x="590" y="35" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(8,48%,38%)">企業入口（單一登入）——規劃停擺</text>
-      <text x="590" y="53" text-anchor="middle" font-size="11" fill="#8a929b">目標：登入一次進入下方所有內部系統（2026-01 月初停擺：資料在 NAS、微軟帳戶建置困難）</text>
+      <g class="an" data-node="sso" data-tip="EIP 轉型目標：員工一組帳密，只要在內網即可進入公司任何系統" style="cursor:pointer">
+      <rect x="16" y="14" width="1148" height="48" rx="8" fill="hsl(35,52%,94%)" stroke="hsl(35,52%,44%)" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <text x="590" y="35" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(35,52%,32%)">EIP 企業入口（單一登入）——轉型目標</text>
+      <text x="590" y="53" text-anchor="middle" font-size="11" fill="#8a929b">舊模組拆出後，EIP 保留為公司唯一入口網：內網一組帳密進入所有系統</text>
       </g>
       <text x="30" y="94" font-size="13" font-weight="700" fill="#5a626b">權威資料來源<tspan font-size="11" font-weight="400" fill="#8a929b">　每筆共用資料只有一個主人</tspan></text>
       <text x="30" y="248" font-size="13" font-weight="700" fill="#5a626b">共用能力層<tspan font-size="11" font-weight="400" fill="#8a929b">　建一次、全公司呼叫</tspan></text>
@@ -835,7 +933,7 @@
       <path class="ae" data-from="hr" data-to="pms" data-tip="缺位：員工與部門資料應由人資系統供應，現暫由 EIP 代理" d="M 132.5 172.0 C 132.5 295.0, 132.5 295.0, 132.5 418.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
       <path class="ae" data-from="hr" data-to="isms" data-tip="缺位：資安大師的人員名單應由人資系統供應，現各自維護" d="M 132.5 172.0 C 132.5 295.0, 596.5 295.0, 596.5 418.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
       <path class="ae" data-from="hr" data-to="learn" data-tip="缺位：受測人員名單應由人資系統供應，現各自維護" d="M 132.5 172.0 C 132.5 340.0, 364.5 340.0, 364.5 508.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
-      <path class="ae" data-from="eip" data-to="hr" data-tip="退場過渡：EIP 廢除前，員工與差勤資料的代理角色須交棒給人資系統" d="M 364.5 108.0 C 364.5 140.0, 132.5 140.0, 132.5 172.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
+      <path class="ae" data-from="eip" data-to="hr" data-tip="拆分過渡：EIP 舊模組中的差勤打卡與員工資料須交棒給人資系統" d="M 364.5 108.0 C 364.5 140.0, 132.5 140.0, 132.5 172.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
       <path class="ae" data-from="pms" data-to="km" data-tip="應介接：建議書的履約實績章節應自專案管理系統取得，現為人工整理" d="M 132.5 418.0 C 132.5 373.0, 745.0 373.0, 745.0 328.0" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
       <path class="ae" data-from="pms" data-to="web" data-tip="建議介接：官網的服務與實績內容應引用專案管理系統資料，避免兩邊各自維護導致數據打架" d="M 132.5 482.0 C 132.5 495.0, 596.5 495.0, 596.5 508.0" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
       <path class="ae" data-from="vuln" data-to="grs" data-tip="應介接：弱點與複測報告應改由生成式報告引擎排版輸出，現為弱掃平台自行輸出" d="M 828.5 418.0 C 828.5 373.0, 1035.0 373.0, 1035.0 328.0" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
@@ -849,10 +947,10 @@
       <text x="132.5" y="135" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(8,48%,38%)">人資系統</text>
       <text x="132.5" y="155" text-anchor="middle" font-size="11" fill="#8a929b">權威來源缺位（停擺）</text>
       </g>
-      <g class="an" data-node="eip" data-tip="VB.NET 舊系統將廢除：商機與訂單已移入專案管理系統、差勤移入人資桶；費用與員工資料暫由其代理至退場" style="cursor:pointer">
+      <g class="an" data-node="eip" data-tip="VB.NET 舊系統瘦身轉型：商機與專案拆到專案管理系統，差勤打卡拆到人資系統，客戶資料需決定權威來源；EIP 本體保留為唯一入口網" style="cursor:pointer">
       <rect x="262" y="108" width="205" height="64" rx="8" fill="hsl(35,52%,94%)" stroke="hsl(35,52%,44%)" stroke-width="1.5" stroke-dasharray="5,4"/>
       <text x="364.5" y="135" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(35,52%,32%)">EIP 企業入口</text>
-      <text x="364.5" y="155" text-anchor="middle" font-size="11" fill="#8a929b">待廢除（退場中）</text>
+      <text x="364.5" y="155" text-anchor="middle" font-size="11" fill="#8a929b">舊模組拆分中</text>
       </g>
       <g class="an" data-node="rfp" data-tip="政府標案需求說明書，餵入文件知識庫" style="cursor:pointer">
       <rect x="494" y="108" width="205" height="64" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
@@ -889,7 +987,7 @@
       <text x="1035.0" y="291" text-anchor="middle" font-size="13.5" font-weight="700" fill="#2b3036">生成式報告系統</text>
       <text x="1035.0" y="311" text-anchor="middle" font-size="11" fill="#8a929b">Ivan（Wiwi 交接）</text>
       </g>
-      <g class="an" data-node="pms" data-tip="專案與履約實績的權威來源；已承接 EIP 的商機與訂單管理" style="cursor:pointer">
+      <g class="an" data-node="pms" data-tip="專案與履約實績的權威來源；承接 EIP 舊模組中的商機與專案管理" style="cursor:pointer">
       <rect x="30" y="418" width="205" height="64" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
       <text x="132.5" y="445" text-anchor="middle" font-size="13.5" font-weight="700" fill="#2b3036">專案管理系統</text>
       <text x="132.5" y="465" text-anchor="middle" font-size="11" fill="#8a929b">Aria、Ren</text>
@@ -958,7 +1056,7 @@
       <line x1="30" y1="734" x2="70" y2="734" stroke="hsl(178,42%,40%)" stroke-width="2"/><text x="78" y="738">現行介接</text>
       <line x1="170" y1="734" x2="210" y2="734" stroke="hsl(35,52%,48%)" stroke-width="2" stroke-dasharray="6,4"/><text x="218" y="738">應介接、尚未做（重複開發風險）</text>
       <line x1="450" y1="734" x2="490" y2="734" stroke="hsl(8,48%,50%)" stroke-width="2" stroke-dasharray="3,4"/><text x="498" y="738">權威來源缺位（應由此供應）</text>
-      <text x="760" y="738" fill="#8a929b">橙虛框＝待廢除、紅虛框＝停擺；滑鼠移到任一系統會亮出上下游</text>
+      <text x="760" y="738" fill="#8a929b">橙虛框＝轉型中、紅虛框＝停擺；滑鼠移到任一系統會亮出上下游</text>
       </g></g></svg>
   </div>
 
@@ -969,10 +1067,11 @@
   <table>
     <thead><tr><th style="width:150px">共用資料／能力</th><th style="width:190px">權威來源</th><th>應取用的系統</th><th>現況落差</th></tr></thead>
     <tbody>
-      <tr><td>員工、部門、證照</td><td>人資系統（停擺，暫由 EIP 代理）</td><td>專案管理、資安大師、線上評量、官網</td><td>權威來源缺位，各系統各自維護人員名單；EIP 待廢除，代理角色須在退場前交棒</td></tr>
-      <tr><td>商機與訂單管理</td><td>專案管理系統（已自 EIP 承接）</td><td>—</td><td>已完成搬遷，EIP 端對應功能待下線</td></tr>
+      <tr><td>員工、部門、證照</td><td>人資系統（停擺，暫由 EIP 代理）</td><td>專案管理、資安大師、線上評量、官網</td><td>權威來源缺位，各系統各自維護人員名單；EIP 舊模組中的人員資料須交棒給人資系統</td></tr>
+      <tr><td>客戶資料</td><td>待決（目前含在 EIP 舊模組）</td><td>專案管理、社交工程、戰情中心、標案文件</td><td>應決定要由專案管理系統或獨立 CRM 承接，避免 EIP 轉型後客戶資料仍無權威來源</td></tr>
+      <tr><td>商機與專案管理</td><td>專案管理系統（自 EIP 拆出）</td><td>—</td><td>EIP 舊模組應逐步下線，只保留入口職責</td></tr>
       <tr><td>打卡差勤</td><td>人資考勤系統（人資桶，停擺）</td><td>—</td><td>自 EIP 劃出但接收端停擺，差勤功能懸空</td></tr>
-      <tr><td>單一登入（進入各內部系統）</td><td>企業入口（EIP 轉型目標，停擺）</td><td>全部內部系統</td><td>資料在 NAS、微軟帳戶建置唯一入口有難度，停擺中</td></tr>
+      <tr><td>單一登入（進入各內部系統）</td><td>EIP 企業入口（轉型目標）</td><td>全部內部系統</td><td>未來員工一組帳密，只要在內網即可進入公司任何系統</td></tr>
       <tr><td>專案與履約實績</td><td>專案管理系統</td><td>文件知識庫（建議書實績章節）、官網</td><td>尚未介接，建議書實績仍人工整理</td></tr>
       <tr><td>模型推論</td><td>模型推論平台</td><td>戰情中心、文件知識庫、生成式報告</td><td>已集中，維持現狀即可</td></tr>
       <tr><td>智慧代理</td><td>代理端點服務</td><td>戰情中心（未來擴及各系統）</td><td>已集中，維持現狀即可</td></tr>
@@ -1059,14 +1158,14 @@
         <li>與公司資料治理藍圖的知識管理層直接相關，建議掛進權威資料來源規劃，避免再建資料孤島</li>
       </ul>
     </div>
-    <div class="road stalled">
-      <h3>企業入口轉型（停擺）</h3>
-      <div class="meta">EIP 廢除計畫｜單一登入目標停擺</div>
+    <div class="road handover">
+      <h3>EIP 企業入口轉型</h3>
+      <div class="meta">舊模組拆分｜唯一入口網目標</div>
       <ul data-edit="road-sso">
-        <li>EIP 舊系統（VB.NET）確定廢除：商機與訂單已移入專案管理系統、打卡差勤劃入人資桶</li>
-        <li>轉型目標：企業入口＝單一登入，登入一次進入公司內部各系統（2026-01 月初即停擺）</li>
-        <li>停擺原因：資料都在 NAS 上、以微軟帳戶建置唯一入口有難度</li>
-        <li>退場前必須處理：費用與員工資料的代理角色要交棒（人資系統），否則專案管理系統的介接會懸空</li>
+        <li>EIP 舊系統（VB.NET）是畸形集合體：商機管理、專案管理、差勤打卡、客戶資料等模組混在同一套內</li>
+        <li>拆分方向：商機與專案拆成專案管理系統；差勤打卡拆成人資系統；客戶資料需決定權威來源</li>
+        <li>轉型目標：EIP 本體成為公司唯一入口網，員工一組帳密，只要在內網即可進入公司任何系統</li>
+        <li>拆分前必須處理：費用、員工資料與客戶資料的權威來源，否則入口轉型後仍會殘留資料混用</li>
       </ul>
     </div>
     <div class="road stalled">
@@ -1088,84 +1187,64 @@
   </div>
 </section>
 
-<!-- ==================== 風險建議 ==================== -->
+<!-- ==================== 管理行動 ==================== -->
 <section class="tab" id="t-risks">
-  <h2>風險與管理建議</h2>
+  <h2>管理行動</h2>
+  <p class="h2-note">只列需要管理層決定或追蹤的事項；背景細節已放在前面各分頁。</p>
 
   <div class="risk">
-    <h3>單點依賴：Jsnn 一人扛三套基礎平台</h3>
+    <h3>1. Jsnn 單點依賴</h3>
     <ul data-edit="risk-jsnn">
-      <li>戰情中心、模型推論平台、代理端點服務的提交幾乎全數出自一人</li>
-      <li>其中兩套是其他系統的上游依賴</li>
-      <li>Nick 的交接目前僅觸及戰情中心（佔比約一成），另兩套完全沒有第二人</li>
-      <li>建議：交接範圍從「戰情中心」擴大為「Jsnn 名下全部三套」，以「Nick 能獨立發版」為驗收標準</li>
+      <li>影響：戰情中心、模型推論、代理端點都集中在同一人。</li>
+      <li>下一步：指定第二人，驗收標準是能獨立發版。</li>
     </ul>
   </div>
 
   <div class="risk">
-    <h3>配置與實況不符：Anne 名義維護官網，但查無任何產出</h3>
+    <h3>2. 官網維護歸屬不清</h3>
     <ul data-edit="risk-anne">
-      <li>官網最後提交是 2026-05-26 由 Aria 送出</li>
-      <li>Anne 在兩個版本庫來源的提交數與內部平台活動量皆為零</li>
-      <li>需釐清：工作存在於版本控制之外（直接改線上或站外工具），或實際尚未開始</li>
-      <li>前者是流程問題、後者是配置問題，處置方式完全不同</li>
-    </ul>
-  </div>
-
-  <div class="risk info">
-    <h3>已處置：兩套清單外系統已補列配置（2026-06-11）</h3>
-    <ul data-edit="risk-shadow">
-      <li>弱點管理平台（Dylan）與文件知識庫系統（Wiwi）已正式納入配置</li>
-      <li>殘留事項：兩案的需求來源、驗收標準與上線時程文件仍待補</li>
-      <li>建議指定驗收人，並要求負責人補上規劃文件</li>
+      <li>影響：Anne 名義維護，但版本庫查無產出。</li>
+      <li>下一步：確認是未開始，還是工作沒有進版本控制。</li>
     </ul>
   </div>
 
   <div class="risk warn">
-    <h3>交接深度不足：兩大系統的提交主力仍是原開發者</h3>
+    <h3>3. 交接深度不足</h3>
     <ul data-edit="risk-handover">
-      <li>專案管理系統：近四百筆提交中 Aria 僅五筆（Ren 三百九十三筆）</li>
-      <li>戰情中心：近五十筆中 Nick 僅六筆</li>
-      <li>名義上已換手，實際產出結構未變</li>
-      <li>建議：為兩位接手人各訂一個「獨立完成並上線」的指標性任務作為交接驗收</li>
+      <li>影響：PMS 仍靠 Ren，戰情中心仍靠 Jsnn。</li>
+      <li>下一步：Aria、Nick 各自完成一個可上線任務。</li>
     </ul>
   </div>
 
   <div class="risk warn">
-    <h3>停擺資產未處置：人資考勤、資安健診、企業入口轉型三案懸置中</h3>
+    <h3>4. 停擺案要決定去留</h3>
     <ul data-edit="risk-stalled">
-      <li>人資考勤停擺七十二日、資安健診停擺四個月，無接手人也無封存決定</li>
-      <li>企業入口（單一登入）轉型因 NAS 資料與微軟帳戶建置難度停擺；EIP 已確定廢除，但差勤接收端（人資桶）同樣停擺，形成兩頭懸空</li>
-      <li>依資料治理藍圖，人資系統是人員資料的權威來源，懸置會卡住資料治理路線</li>
-      <li>建議給出明確決策：指派接手或正式封存；EIP 退場時程須與人資桶重啟綁定排程</li>
+      <li>影響：人資考勤卡住 EIP 拆分；資安健診長期懸置。</li>
+      <li>下一步：重啟就指派接手人；不重啟就正式封存。</li>
     </ul>
   </div>
 
   <div class="risk warn">
-    <h3>退場依賴：EIP 廢除前，下游介接須先交棒</h3>
+    <h3>5. EIP 拆分順序</h3>
     <ul data-edit="risk-eip">
-      <li>專案管理系統目前仍從 EIP 取用費用與員工資料（單向唯讀）</li>
-      <li>EIP 廢除後這條介接會斷，必須在退場前把員工資料權威來源移到人資系統</li>
-      <li>商機與訂單已完成搬遷，建議確認 EIP 端對應功能下線，避免兩邊並行又出現雙重維護</li>
+      <li>影響：EIP 同時包住商機、專案、差勤、客戶資料。</li>
+      <li>下一步：先定資料權威來源，再下線 EIP 舊模組。</li>
     </ul>
   </div>
 
   <div class="risk info">
-    <h3>提交身份治理：至少四種不可歸戶的提交名義</h3>
+    <h3>6. 提交身份治理</h3>
     <ul data-edit="risk-identity">
-      <li>共用工具帳號：線上評量系統全部五十筆</li>
-      <li>個人信箱與公司信箱混用：Weiyao 三種名義</li>
-      <li>離職者機器名稱：人資考勤系統</li>
-      <li>影響產出統計準確度與日後稽核；建議統一提交者姓名與信箱格式，停用共用帳號提交</li>
+      <li>影響：共用帳號與信箱混用會讓產出無法歸戶。</li>
+      <li>下一步：統一提交姓名與信箱，停用共用帳號提交。</li>
     </ul>
   </div>
 
   <div class="risk info">
-    <h3>版本庫雙軌：資安大師存在內外兩條線</h3>
+    <h3>7. 資安大師主線決策</h3>
     <ul data-edit="risk-isms">
-      <li>內部平台是現行開發主線，雲端另有規格驅動開發的重製版本庫</li>
-      <li>若重製版仍在推進，等於同一系統兩組真相</li>
-      <li>建議明確宣告主線並封存另一條</li>
+      <li>影響：內部主線與雲端重製版會形成兩套真相。</li>
+      <li>下一步：宣告唯一主線，另一條封存或併軌。</li>
     </ul>
   </div>
 </section>
@@ -1173,7 +1252,7 @@
 <!-- ==================== 漢昕軟體開發定位 ==================== -->
 <section class="tab" id="t-position">
   <h2 data-edit="pos-1">為什麼需要先定位</h2>
-  <p class="h2-note" data-edit="pos-19">起點是公司對軟體開發團隊（與其未來）的定位期待，而不是用人員特質反推公司該長什麼樣；人員特質放在鏈條最後，做適才適性的歸位。</p>
+  <p class="h2-note" data-edit="pos-19">先決定公司要的開發模式，再決定權限、速度、人員歸位。模式一和模式二的差異在「責任集中」或「責任切分」。</p>
   <div class="arch" style="padding:14px 18px;">
     <svg viewBox="0 0 980 100" style="max-width:980px; display:block; margin:0 auto" width="100%" role="img" aria-label="定位推導鏈">
       <defs>
@@ -1203,8 +1282,21 @@
     </svg>
   </div>
 
+  <h2>兩種模式差異</h2>
+  <p class="h2-note">這兩種模式有差異；不要混用。漢昕目前比較接近模式一，但要加上上線後權限收斂。</p>
+  <table>
+    <thead><tr><th style="width:150px">比較點</th><th>模式一：全人開發</th><th>模式二：權責分工</th></tr></thead>
+    <tbody>
+      <tr><td>核心邏輯</td><td>一個負責人推完整生命週期</td><td>需求、開發、測試、環境分工</td></tr>
+      <tr><td>速度</td><td>快，等待少</td><td>穩，但協調成本高</td></tr>
+      <tr><td>權限</td><td>開發期可持開發、測試、正式三區；上線後正式區交 MIS</td><td>環境與正式區從一開始由 MIS 管</td></tr>
+      <tr><td>風險</td><td>單點依賴與重複造輪子</td><td>專職支援不足時會卡住開發</td></tr>
+      <tr><td>漢昕現況</td><td>可行，但要設交接與共用能力規則</td><td>人力與角色成熟度不足，暫不適合完整採用</td></tr>
+    </tbody>
+  </table>
+
   <details class="fold">
-    <summary><span data-edit="fold-m1">模式一：全人開發（從零到一、一條龍）<span class="fold-sub">前提假設：公司期望每位同仁都具備從零到一獨立開發系統的能力</span></span></summary>
+    <summary><span data-edit="fold-m1">模式一：責任集中<span class="fold-sub">一個系統負責人推完整生命週期，速度快，但單點風險高。</span></span></summary>
   <div class="arch" style="padding:14px 18px; margin-top:12px;">
     <svg viewBox="0 0 980 372" style="max-width:980px; display:block; margin:0 auto" width="100%" role="img" aria-label="權限生命週期與角色涵蓋">
       <g font-family="PingFang TC,Noto Sans TC,sans-serif">
@@ -1249,25 +1341,24 @@
     <div class="road">
       <h3 data-edit="pos-3">人員配置邏輯</h3>
       <ul data-edit="pos-4">
-        <li>具備從零到一能力者，負責新系統的完整生命週期：規劃、開發、環境建置、上線、初期維運</li>
-        <li>不具備（或尚未具備）從零開始能力者，定位為維運與接手——這不是降級，接手他人系統並讓它穩定上線是獨立且高價值的能力</li>
-        <li>每套系統永遠有一個明確的「唯一直接負責人」，不存在多頭馬車</li>
-        <li>本模式的本質是「執行權下放、仲裁權集中」：MIS 的環境執行權與系統內技術決策權下放給負責人；跨系統架構、共用能力仲裁、人的評估仍需集中把關、不可下放（跨系統架構、共用能力仲裁、人員評估）</li>
+        <li>每套系統只有一位直接負責人。</li>
+        <li>負責人處理需求、開發、測試、上線。</li>
+        <li>跨系統架構與共用能力仍由管理層仲裁。</li>
       </ul>
     </div>
     <div class="road">
       <h3 data-edit="pos-5">權限生命週期（本模式的關鍵配套）</h3>
       <ul data-edit="pos-6">
-        <li>開發期（上線前）：系統負責人持有開發、測試、正式三區的完整環境權限，自己建、自己部、自己驗</li>
-        <li>上線後（對部門啟用、對客戶販售）：正式區權限收斂、移交 MIS 管理，負責人保留開發與測試區</li>
-        <li>MIS 在開發期不介入、專心當備援（開發端與資安監控端皆是），上線後才接管環境——雙方都省掉等待與互卡</li>
+        <li>開發期：負責人可持三區權限。</li>
+        <li>上線後：正式區交給 MIS。</li>
+        <li>MIS 要能備援，不只接權限。</li>
       </ul>
     </div>
   </div>
   </details>
 
   <details class="fold">
-    <summary><span data-edit="fold-m2">模式二：權責分工<span class="fold-sub">前提假設：公司期望開發、測試、環境、維運的權責切分清楚</span></span></summary>
+    <summary><span data-edit="fold-m2">模式二：責任切分<span class="fold-sub">開發只負責寫與交付，其他角色要真的接得住。</span></span></summary>
   <div class="arch" style="padding:14px 18px; margin-top:12px;">
     <svg viewBox="0 0 980 280" style="max-width:980px; display:block; margin:0 auto" width="100%" role="img" aria-label="權責分工結構">
       <g font-family="PingFang TC,Noto Sans TC,sans-serif">
@@ -1315,18 +1406,18 @@
     <div class="road maint">
       <h3 data-edit="pos-8">這條路的必要條件</h3>
       <ul data-edit="pos-9">
-        <li>需要真正的專職人員：環境與權限歸 MIS、品質歸測試、跨系統技術決策歸技術經理</li>
-        <li>開發人員只負責寫與交付，不可能、也不應該把所有事情自己準備到位</li>
-        <li>每個切分點都要有服務水準：開環境多久、開權限多久、誰回技術問題</li>
-        <li>權力集中的成立條件：每個專職角色都要夠強到能互相輔助——分工鏈的強度等於最弱的一環</li>
+        <li>MIS 管環境與權限。</li>
+        <li>測試負責驗收與回歸。</li>
+        <li>技術經理負責標準與仲裁。</li>
+        <li>每個角色都要有明確服務水準。</li>
       </ul>
     </div>
     <div class="road stalled">
       <h3 data-edit="pos-10">沒做到位的下場（要避免的狀態）</h3>
       <ul data-edit="pos-11">
-        <li>權責切了，但 MIS 或技術經理無法提供實質協助——開發要不到環境、等不到答案</li>
-        <li>開發人員無所適從：名義上不歸他管的事，實際上還是得自己硬做，等於兩種模式的缺點同時存在</li>
-        <li>結論：分工模式的成本是「專職支援必須真的存在」，付不起這個成本就不要選這條路</li>
+        <li>角色缺位時，開發會被流程卡住。</li>
+        <li>名義上分工，實際上還是開發硬扛。</li>
+        <li>支援人力不足時，不適合選這條路。</li>
       </ul>
     </div>
   </div>
@@ -1428,7 +1519,7 @@
         <text x="254" y="156" text-anchor="middle" font-size="11" fill="#5a626b">養不起完整權責分工：模式二的專職支援成本付不起</text>
         <rect x="504" y="114" width="460" height="54" rx="8" fill="#ffffff" stroke="#c9ced4"/>
         <text x="734" y="136" text-anchor="middle" font-size="13" font-weight="700" fill="#2b3036">開發中系統單人提交佔比中位數 100％</text>
-        <text x="734" y="156" text-anchor="middle" font-size="11" fill="#5a626b">八套開發中系統的最大貢獻者佔比中位數 100％——把既成事實制度化</text>
+        <text x="734" y="156" text-anchor="middle" font-size="11" fill="#5a626b">開發中專案與共用能力的最大貢獻者佔比中位數 100％——把既成事實制度化</text>
 
         <text x="24" y="196" font-size="11" font-weight="700" fill="#8a929b">前提（先成立才上路）</text>
         <rect x="24" y="204" width="460" height="54" rx="8" fill="hsl(35,52%,94%)" stroke="hsl(35,52%,44%)"/>
@@ -1480,12 +1571,12 @@
       <rect x="8" y="74" width="1164" height="102" rx="10" fill="hsl(215,42%,97%)" stroke="hsl(215,42%,86%)"/>
       <rect x="8" y="468" width="1164" height="244" rx="10" fill="hsl(262,32%,97.5%)" stroke="hsl(262,32%,88%)"/>
       <rect x="8" y="736" width="1164" height="96" rx="10" fill="hsl(35,52%,96%)" stroke="hsl(35,52%,84%)"/>
-      <g class="an" data-node="sso" data-tip="EIP 轉型目標：登入一次進入下方所有內部系統；因資料在 NAS、微軟帳戶建置唯一入口有難度，2026-01 月初停擺" style="cursor:pointer">
-      <rect x="16" y="14" width="1148" height="48" rx="8" fill="hsl(8,48%,95%)" stroke="hsl(8,48%,46%)" stroke-width="1.5" stroke-dasharray="5,4"/>
-      <text x="590" y="35" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(8,48%,38%)">企業入口（單一登入）——規劃停擺</text>
-      <text x="590" y="53" text-anchor="middle" font-size="11" fill="#8a929b">目標：登入一次進入下方所有內部系統（2026-01 月初停擺：資料在 NAS、微軟帳戶建置困難）</text>
+      <g class="an" data-node="sso" data-tip="EIP 轉型目標：員工一組帳密，只要在內網即可進入公司任何系統" style="cursor:pointer">
+      <rect x="16" y="14" width="1148" height="48" rx="8" fill="hsl(35,52%,94%)" stroke="hsl(35,52%,44%)" stroke-width="1.5" stroke-dasharray="5,4"/>
+      <text x="590" y="35" text-anchor="middle" font-size="13.5" font-weight="700" fill="hsl(35,52%,32%)">EIP 企業入口（單一登入）——轉型目標</text>
+      <text x="590" y="53" text-anchor="middle" font-size="11" fill="#8a929b">舊模組拆出後，EIP 保留為公司唯一入口網：內網一組帳密進入所有系統</text>
       </g>
-      <text x="16" y="92" font-size="13" font-weight="700" fill="#5a626b">權威資料來源<tspan font-size="11" font-weight="400" fill="#8a929b">　每筆共用資料只有一個主人；橙虛框＝待廢除</tspan></text>
+      <text x="16" y="92" font-size="13" font-weight="700" fill="#5a626b">權威資料來源<tspan font-size="11" font-weight="400" fill="#8a929b">　每筆共用資料只有一個主人；橙虛框＝轉型中</tspan></text>
       <rect x="16" y="212" width="588" height="208" rx="10" fill="none" stroke="hsl(262,32%,80%)" stroke-dasharray="3,4"/>
       <text x="30" y="230" font-size="12" font-weight="700" fill="hsl(262,32%,45%)">知識管理（KM）<tspan font-size="10.5" font-weight="400" fill="#8a929b">　人類編輯入口 → AI 可讀資料層　｜　下排：知識內容域（U 型＝層內關係）</tspan></text>
       <rect x="624" y="212" width="544" height="208" rx="10" fill="none" stroke="hsl(178,42%,70%)" stroke-dasharray="3,4"/>
@@ -1518,10 +1609,10 @@
       <path class="ae" data-from="hr" data-to="pms" data-tip="缺位：員工與部門資料應由人資系統供應，現暫由 EIP 代理" d="M 105.0 162.0 C 105.0 388.0, 132.5 388.0, 132.5 614.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
       <path class="ae" data-from="hr" data-to="isms" data-tip="缺位：人員名單應由人資系統供應，現自建" d="M 105.0 162.0 C 105.0 388.0, 364.5 388.0, 364.5 614.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
       <path class="ae" data-from="hr" data-to="learn" data-tip="缺位：受測名單應由人資系統供應，現自建" d="M 105.0 162.0 C 105.0 388.0, 596.5 388.0, 596.5 614.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
-      <path class="ae" data-from="cust" data-to="ssc" data-tip="缺位：客戶資料無權威來源，社交工程自建名單" d="M 493.0 162.0 C 493.0 332.0, 596.5 332.0, 596.5 502.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
-      <path class="ae" data-from="cust" data-to="soc" data-tip="缺位：客戶資料無權威來源，戰情中心各自維護" d="M 493.0 162.0 C 493.0 332.0, 132.5 332.0, 132.5 502.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
+      <path class="ae" data-from="cust" data-to="ssc" data-tip="承接待決：客戶資料目前含在 EIP 舊模組，社交工程自建名單" d="M 493.0 162.0 C 493.0 332.0, 596.5 332.0, 596.5 502.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
+      <path class="ae" data-from="cust" data-to="soc" data-tip="承接待決：客戶資料目前含在 EIP 舊模組，戰情中心各自維護" d="M 493.0 162.0 C 493.0 332.0, 132.5 332.0, 132.5 502.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
       <path class="ae" data-from="att" data-to="hr" data-tip="缺位：人資考勤（人資桶）重啟後應成為人資權威來源的載體" d="M 828.5 614.0 C 828.5 388.0, 105.0 388.0, 105.0 162.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
-      <path class="ae" data-from="eip" data-to="hr" data-tip="退場過渡：EIP 廢除前，員工與差勤資料的代理角色須交棒給人資系統" d="M 299.0 106.0 C 299.0 134.0, 105.0 134.0, 105.0 162.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
+      <path class="ae" data-from="eip" data-to="hr" data-tip="拆分過渡：EIP 舊模組中的差勤打卡與員工資料須交棒給人資系統" d="M 299.0 106.0 C 299.0 134.0, 105.0 134.0, 105.0 162.0" fill="none" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/>
       <path class="ae" data-from="k1" data-to="k2" data-tip="層內關係：知識內容域彼此引用" d="M 121.0 396.0 C 121.0 426.0, 315.0 426.0, 315.0 396.0" fill="none" stroke="hsl(262,32%,55%)" stroke-width="1.6" stroke-dasharray="2,4"/>
       <path class="ae" data-from="k2" data-to="k3" data-tip="層內關係：知識內容域彼此引用" d="M 315.0 396.0 C 315.0 426.0, 504.0 426.0, 504.0 396.0" fill="none" stroke="hsl(262,32%,55%)" stroke-width="1.6" stroke-dasharray="2,4"/>
       <path class="ae" data-from="isms" data-to="vuln" data-tip="資安三平台整合（BCCSONE 藍圖）：統一資產清冊 API 供掃描目標對應；弱點同步整合資料庫、轉風險評分" d="M 364.5 614 C 364.5 600, 364.5 600, 364.5 586" fill="none" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/>
@@ -1533,15 +1624,15 @@
       <text x="105.0" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(8,48%,38%)">人資系統</text>
       <text x="105.0" y="145" text-anchor="middle" font-size="10.5" fill="#5a626b">權威來源缺位（停擺）</text>
       </g>
-      <g class="an" data-node="eip" data-tip="VB.NET 舊系統，待廢除：商機與訂單已移入專案管理系統、差勤移入人資桶；費用與員工資料暫由其代理至退場。" style="cursor:pointer">
+      <g class="an" data-node="eip" data-tip="VB.NET 舊系統瘦身轉型：商機與專案拆到專案管理系統，差勤打卡拆到人資系統，客戶資料需決定權威來源；EIP 本體保留為唯一入口網。" style="cursor:pointer">
       <rect x="210" y="106" width="178" height="56" rx="8" fill="hsl(35,52%,94%)" stroke="hsl(35,52%,44%)" stroke-width="1.5" stroke-dasharray="5,4"/>
       <text x="299.0" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(35,52%,32%)">EIP 企業入口</text>
-      <text x="299.0" y="145" text-anchor="middle" font-size="10.5" fill="#5a626b">待廢除（退場中）</text>
+      <text x="299.0" y="145" text-anchor="middle" font-size="10.5" fill="#5a626b">舊模組拆分中</text>
       </g>
-      <g class="an" data-node="cust" data-tip="客戶資料目前散落在社交工程、SOC、標案文件中，無單一權威來源——資料治理待決事項。" style="cursor:pointer">
+      <g class="an" data-node="cust" data-tip="客戶資料目前含在 EIP 舊模組，也散落在社交工程、SOC、標案文件中；需決定由專案管理系統或獨立 CRM 承接。" style="cursor:pointer">
       <rect x="404" y="106" width="178" height="56" rx="8" fill="hsl(8,48%,95%)" stroke="hsl(8,48%,46%)" stroke-width="1.5" stroke-dasharray="5,4"/>
       <text x="493.0" y="128" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(8,48%,38%)">客戶資料</text>
-      <text x="493.0" y="145" text-anchor="middle" font-size="10.5" fill="#5a626b">來源未定，散落各系統</text>
+      <text x="493.0" y="145" text-anchor="middle" font-size="10.5" fill="#5a626b">含在 EIP 舊模組，承接待決</text>
       </g>
       <g class="an" data-node="rfp" style="cursor:pointer">
       <rect x="598" y="106" width="178" height="56" rx="8" fill="#ffffff" stroke="#c9ced4" stroke-width="1.5"/>
@@ -1632,12 +1723,12 @@
       <text x="1060.5" y="558" text-anchor="middle" font-size="10" fill="#8a929b">無進行中提交</text>
       <text x="1060.5" y="575" text-anchor="middle" font-size="9.5" fill="hsl(8,48%,42%)">服務與實績手動維護（錯置）</text>
       </g>
-      <g class="an" data-node="pms" data-tip="來源：EIP（費用、員工代理，至 EIP 退場為止）。已承接 EIP 的商機與訂單管理。去向：實績應入知識庫、官網應引用。本身是「案」的權威來源。" style="cursor:pointer">
+      <g class="an" data-node="pms" data-tip="來源：EIP 舊模組（費用、員工代理，至拆分完成為止）。承接 EIP 的商機與專案管理。去向：實績應入知識庫、官網應引用。本身是「案」的權威來源。" style="cursor:pointer">
       <rect x="30" y="614" width="205" height="84" rx="8" fill="hsl(262,32%,97%)" stroke="hsl(262,32%,50%)" stroke-width="1.5"/>
       <text x="132.5" y="636" text-anchor="middle" font-size="13" font-weight="700" fill="hsl(262,32%,40%)">專案管理系統</text>
       <text x="132.5" y="653" text-anchor="middle" font-size="10.5" fill="#5a626b">Aria、Ren</text>
       <text x="132.5" y="670" text-anchor="middle" font-size="10" fill="#8a929b">進行中：導覽、標註、安全強化</text>
-      <text x="132.5" y="687" text-anchor="middle" font-size="9.5" fill="hsl(8,48%,42%)">已承接 EIP 商機與訂單管理</text>
+      <text x="132.5" y="687" text-anchor="middle" font-size="9.5" fill="hsl(8,48%,42%)">承接 EIP 商機與專案管理</text>
       </g>
       <g class="an" data-node="isms" data-tip="BCCS One：統一資產清冊與風險評鑑引擎的權威來源（資產模組與風險核心已完成）；前端完成九成，後端 API 與資料庫為上線最大阻礙。去向：制度文件；人員名單應改由人資來源供應。" style="cursor:pointer">
       <rect x="262" y="614" width="205" height="84" rx="8" fill="hsl(262,32%,97%)" stroke="hsl(262,32%,50%)" stroke-width="1.5"/>
@@ -1718,12 +1809,54 @@
     { id: 'aria',  name: 'Aria',  tech: 19, role: '專案管理系統接手主導' },
     { id: 'ivan',  name: 'Ivan',  tech: 17, role: '社交工程系統、生成式報告系統維運' },
     { id: 'dylan', name: 'Dylan', tech: 17, role: '弱點管理平台獨力開發' },
-    { id: 'ted',   name: 'Ted',   tech: 14, role: '資安大師後端接手' },
+    { id: 'ted',   name: 'Ted',   tech: 16, role: '資安大師後端接手' },
     { id: 'nick',  name: 'Nick',  tech: 9,  role: 'advMDR 戰情中心交接初期' },
     { id: 'zane',  name: 'Zane',  tech: 8,  role: '線上評量系統（訓練用）' },
     { id: 'anne',  name: 'Anne',  tech: 0,  role: '公司官網維護（查無產出，技術分以 0 計）' }
   ];
-  var DIMS = ['vision', 'logic', 'drive', 'team'];
+  var DEFAULT_SCORES = {
+    jsnn: { leadership: 3.2, proactive: 3.4, bigPicture: 3.4, collaboration: 4, ownership: 5, growth: 4, note: 'Jsnn是領域專家與高效率執行者\n跟自己本身專案的合作積極度非常踴躍且面對問題很正向，且程式上的問題都可以靠自己解決，同時負責了兩套系統的基礎架構，但是若跟非自身相關時，即使是整體流程或架構，比較不會提出自己想法，會認為it is what it is' },
+    wiwi: { leadership: 4, proactive: 4.5, bigPicture: 5, collaboration: 3, ownership: 4.5, growth: 5, note: 'Wiwi 感覺是高階技術規劃者與挑戰者\n具備很難得的整體規劃能力跟開發能力，兼具廣度與深度的開發能力，擁有極強的自主驅動力與糾錯意識\n獨立開發傾向強，協作抗性高；渴望透過自己的產出跟價值獲得組織的「特權」與「特殊待遇」，如雙螢幕、遠端工作天數增加，若體制無法彈性對應，極易引發團隊管理衝突。如能類似Plantir裡面Alex Karp為那些特別的人闢出一條路的話就能將他的能力發揮到最大。' },
+    aria: { leadership: 2.5, proactive: 3, bigPicture: 2.5, collaboration: 5, ownership: 4.5, growth: 3.5, note: 'Aria 默默耕耘的溫暖協調者\n隨和、重和諧且負責任，是值得信賴的團隊助力；然而，過度配合易忽視個人底線，在決策時缺乏主導性，面對僵局較難果斷拍板，較適合在穩定的團隊結構中執行任務' },
+    ivan: { leadership: 2.5, proactive: 2.5, bigPicture: 2, collaboration: 3, ownership: 4, growth: 3, note: 'Ivan至從接社交工程後有將社交工程做的更符合客戶需求\n會按照需求執行的開發者，也會積極回覆使用者問題，但不太與團隊互動或討論，比較被動，可是公告或是交辦的事情都會做。\n' },
+    dylan: { leadership: 3.5, proactive: 3, bigPicture: 3.5, collaboration: 5, ownership: 3.5, growth: 3.5, note: 'Dylan是外向的執行者，(E人)\n雖然會焦慮緊張，但是對外應對與會議溝通時，台風穩健、講話清楚，能將技術需求轉化為流暢的表達，（舉例成大介紹、團隊進度會議）\n極度依賴明確的需求定案，若任務模糊或是突發狀況，他容易因過度反思細節而偏離開發主軸。\n雖然會與團隊討論，但會忽略了「建立里程碑」、「進度回報」與「上版更新」這種行政作業。\n針對流程面的細節比較有感，但若是比較宏觀的系統之間連結性較無感。' },
+    ted: { leadership: 3.5, proactive: 4.5, bigPicture: 3, collaboration: 4, ownership: 5, growth: 4.5, note: '端看Ted目前上版的紀錄觀察到是唯一對上版紀律執行最徹底的人，如：\n1.實作提交明確標註測試層級——領域實體（TDD）、服務層（TDD＋整合測試）、控制器層（e2e 測試），由內往外一層層蓋\n2.做參數設定時發現 ISO 條文庫該獨立，就「切出獨立 feature」另開設計；範圍變大時（scope M→L）重開決策而不是硬塞\n3.技債不順手亂修：發現的問題登記成技債編號（TD-PS-7/8、TD-ISO-3）排程處理，區分「現在的範圍」與「以後的工作」\n4. 同時也在專案管理上新增後里程碑跟階段。' },
+    nick: { leadership: 3.5, proactive: 4.5, bigPicture: 3.5, collaboration: 4, ownership: 4, growth: 5, note: 'Nick入職剛滿兩個月\n在第一個月時遲到一次但經提醒後沒再遲到\n第一個月的熟悉開發方式跟環境的測驗是請他針對戰情中心跟弱掃以及資安大師這三套系統發想一個可以共通的平台，後來的成果發表具備獨立思考性、且在實作過程中也會積極的提出更好的方式去改善效率效能，跟Jsnn合作後，Jsnn評價非常正向。且也很快就熟悉目前戰情中心在做的事。' },
+    anne: { leadership: 3, proactive: 3.5, bigPicture: 3, collaboration: 3, ownership: 3, growth: 4, note: '雖然才剛接官網專案，但是從evok或是會議上的問答上感覺得出來有獨立思考力以及需要按照自己的步調做事。' },
+    zane: { leadership: 2, proactive: 2.5, bigPicture: 2, collaboration: 2, ownership: 3, growth: 3, note: '抗壓性高，但是辦公室普遍對Zane評價為"詭異"。\n有點擔憂若是要跟其他人合作的話會不經思考的直接參照AI指示實作。\n' }
+  };
+  var SHORT_DEFAULT_NOTES = {
+    jsnn: 'Jsnn 是領域專家與高效率執行者，能獨立解決程式問題並負責底層架構；非自身專案時較少主動提出整體流程或架構想法。',
+    wiwi: 'Wiwi 是高階技術規劃者與挑戰者，具備整體規劃與開發能力；獨立開發傾向強，協作抗性高。',
+    aria: 'Aria 是穩定協調者，重和諧且負責任；決策主導性較弱，適合在穩定團隊結構中執行任務。',
+    ivan: 'Ivan 會按照需求執行，也會積極回覆使用者問題；團隊互動較被動，但交辦事項會完成。',
+    dylan: 'Dylan 是外向執行者，對外溝通穩健；依賴明確需求，任務模糊時容易偏離主軸。',
+    ted: 'Ted 對上版紀律執行徹底，能分層測試、切出獨立功能並管理技債。',
+    nick: 'Nick 入職初期已展現獨立思考與改善效率的傾向，Jsnn 對合作評價正向。',
+    anne: 'Anne 具備獨立思考力，但目前官網產出仍需版本控制資料佐證。',
+    zane: 'Zane 抗壓性高，但需要避免未經判斷直接照工具輸出實作。'
+  };
+  var HEX_AXES = [
+    { key: 'leadership', label: '領導' },
+    { key: 'proactive', label: '主動' },
+    { key: 'bigPicture', label: '大局' },
+    { key: 'collaboration', label: '協作' },
+    { key: 'ownership', label: '責任' },
+    { key: 'growth', label: '成長' }
+  ];
+  var RISK_ITEMS = [
+    { area: '模型推論與代理端點', owner: 'Jsnn', backup: 'Nick、Ted', risk: 'high', action: '要求 Jsnn 留啟動手冊、部署手冊、環境設定、故障排除與交接任務；Nick 每週接一項底層任務。' },
+    { area: 'advMDR 戰情中心', owner: 'Jsnn', backup: 'Nick', risk: 'high', action: '把 Jsnn 從唯一開發者改成平台負責人；Nick 要能獨立關閉問題、改功能、查部署。' },
+    { area: '文件知識庫與生成式報告', owner: 'Wiwi、Ivan', backup: '待指定', risk: 'mid', action: 'Wiwi 留架構與檢索流程說明；Ivan 補維運手冊，避免只會接畫面不會接核心流程。' },
+    { area: '專案管理系統', owner: 'Aria、Ren', backup: '待指定', risk: 'mid', action: '把 Ren 的隱性知識轉成部署、除錯、資料流文件；Aria 逐步接主導決策。' },
+    { area: '公司官網', owner: 'Anne', backup: 'Aria', risk: 'high', action: '先要求所有產出進版本控制；若無提交紀錄，不能視為已有人維護。' },
+    { area: '停擺對內系統', owner: '無穩定主責', backup: '無', risk: 'high', action: '人資考勤與資安健診先決定是否重啟；若重啟，要先定資料權威與最小交付範圍。' }
+  ];
+  var DIMS = HEX_AXES.map(function (axis) { return axis.key; });
+  var DIM_LABELS = HEX_AXES.reduce(function (out, axis) {
+    out[axis.key] = axis.label;
+    return out;
+  }, {});
   var MANUAL_MAX = DIMS.length * 5;
 
   function lsGet(key) {
@@ -1756,6 +1889,7 @@
 
   /* 綜合項目評分表 */
   var scores = lsGet(LS_SCORES);
+  if (!Object.keys(scores).length) scores = JSON.parse(JSON.stringify(DEFAULT_SCORES));
 
   function clamp(v) {
     var n = parseFloat(v);
@@ -1763,16 +1897,31 @@
     return Math.max(0, Math.min(5, n));
   }
   function personScore(id) {
+    migrateScore(id);
     var s = scores[id] || {};
     var sub = 0;
     DIMS.forEach(function (d) { sub += (typeof s[d] === 'number' ? s[d] : 0); });
     return sub;
+  }
+  function migrateScore(id) {
+    var s = scores[id] || {};
+    var defaults = DEFAULT_SCORES[id] || {};
+    if (typeof s.leadership !== 'number') s.leadership = typeof defaults.leadership === 'number' ? defaults.leadership : avg([n(s.vision), n(s.logic)]);
+    if (typeof s.proactive !== 'number') s.proactive = typeof defaults.proactive === 'number' ? defaults.proactive : n(s.drive);
+    if (typeof s.bigPicture !== 'number') s.bigPicture = typeof s.architecture === 'number' ? s.architecture : (typeof s.vision === 'number' ? s.vision : n(defaults.bigPicture));
+    if (typeof s.collaboration !== 'number') s.collaboration = typeof s.collab === 'number' ? s.collab : (typeof s.team === 'number' ? s.team : n(defaults.collaboration));
+    if (typeof s.ownership !== 'number') s.ownership = typeof defaults.ownership === 'number' ? defaults.ownership : n(s.process);
+    if (typeof s.growth !== 'number') s.growth = typeof defaults.growth === 'number' ? defaults.growth : n(s.drive);
+    if (s.note === SHORT_DEFAULT_NOTES[id]) s.note = defaults.note;
+    if (!s.note && defaults.note) s.note = defaults.note;
+    scores[id] = s;
   }
 
   function buildManualTable() {
     var tbody = document.querySelector('#manualTable tbody');
     tbody.innerHTML = '';
     PEOPLE.forEach(function (p) {
+      migrateScore(p.id);
       var s = scores[p.id] || {};
       var tr = document.createElement('tr');
       tr.innerHTML =
@@ -1780,7 +1929,7 @@
         DIMS.map(function (d) {
           var val = (typeof s[d] === 'number') ? s[d] : '';
           return '<td class="num"><input class="score" type="number" min="0" max="5" step="0.5" ' +
-                 'data-person="' + p.id + '" data-dim="' + d + '" value="' + val + '" placeholder="0-5"></td>';
+                 'data-person="' + p.id + '" data-dim="' + d + '" value="' + val + '" placeholder="' + DIM_LABELS[d] + '"></td>';
         }).join('') +
         '<td class="num subtotal" id="sub-' + p.id + '">' + personScore(p.id).toFixed(1) + '</td>';
       tbody.appendChild(tr);
@@ -1789,7 +1938,7 @@
       nr.id = 'note-row-' + p.id;
       nr.style.display = 'none';
       var td = document.createElement('td');
-      td.colSpan = 6;
+      td.colSpan = DIMS.length + 2;
       var view = document.createElement('div');
       view.className = 'note-view' + (s.note ? '' : ' empty');
       view.id = 'note-view-' + p.id;
@@ -1837,6 +1986,112 @@
     });
   }
 
+  function n(v) {
+    return typeof v === 'number' ? v : 0;
+  }
+  function avg(list) {
+    if (!list.length) return 0;
+    return list.reduce(function (a, b) { return a + b; }, 0) / list.length;
+  }
+  function safe(text) {
+    return String(text || '').replace(/[&<>"']/g, function (m) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m];
+    });
+  }
+  function personHex(p) {
+    migrateScore(p.id);
+    var s = scores[p.id] || {};
+    return DIMS.map(function (d) { return n(s[d]); });
+  }
+  function radarSvg(vals) {
+    var cx = 90, cy = 90, r = 58;
+    function pt(i, ratio) {
+      var a = -Math.PI / 2 + i * Math.PI * 2 / 6;
+      return [cx + Math.cos(a) * r * ratio, cy + Math.sin(a) * r * ratio];
+    }
+    function poly(ratio) {
+      return HEX_AXES.map(function (_, i) { return pt(i, ratio).map(function (x) { return x.toFixed(1); }).join(','); }).join(' ');
+    }
+    var valuePoints = vals.map(function (v, i) { return pt(i, Math.max(0, Math.min(5, v)) / 5).map(function (x) { return x.toFixed(1); }).join(','); }).join(' ');
+    var rings = [1, 2, 3, 4, 5].map(function (level) {
+      return '<polygon points="' + poly(level / 5) + '" fill="none" stroke="#e3e6ea" stroke-width="1"/>';
+    }).join('');
+    var spokes = HEX_AXES.map(function (_, i) {
+      var p = pt(i, 1);
+      return '<line x1="' + cx + '" y1="' + cy + '" x2="' + p[0].toFixed(1) + '" y2="' + p[1].toFixed(1) + '" stroke="#e3e6ea" stroke-width="1"/>';
+    }).join('');
+    var labels = HEX_AXES.map(function (axis, i) {
+      var p = pt(i, 1.24);
+      return '<text x="' + p[0].toFixed(1) + '" y="' + p[1].toFixed(1) + '" text-anchor="middle" dominant-baseline="middle" font-size="10.5" fill="#5a626b">' + axis.label + '</text>';
+    }).join('');
+    return '<svg class="hex-svg" viewBox="0 0 180 180" aria-hidden="true">' + rings + spokes + '<polygon points="' + valuePoints + '" fill="hsla(178,42%,40%,0.24)" stroke="hsl(178,42%,34%)" stroke-width="2"/>' + labels + '</svg>';
+  }
+  function buildHexGrid() {
+    var grid = document.getElementById('hexGrid');
+    grid.innerHTML = '';
+    PEOPLE.forEach(function (p) {
+      var vals = personHex(p);
+      var s = scores[p.id] || {};
+      var card = document.createElement('div');
+      card.className = 'hex-card';
+      card.innerHTML =
+        '<div class="hex-head"><b>' + safe(p.name) + '</b><span>平均 ' + avg(vals).toFixed(1) + '／5</span></div>' +
+        radarSvg(vals) +
+        '<div class="hex-note">' + safe(s.note || '尚未匯入或填寫特質備註') + '</div>';
+      grid.appendChild(card);
+    });
+  }
+  function buildHexSummary() {
+    var rows = PEOPLE.map(personHex);
+    var axisAvg = HEX_AXES.map(function (_, i) { return avg(rows.map(function (r) { return r[i]; })); });
+    var company = avg(axisAvg);
+    var covered = axisAvg.filter(function (v) { return v >= 3.5; }).length;
+    var highRisk = RISK_ITEMS.filter(function (r) { return r.risk === 'high'; }).length;
+    document.getElementById('hexSummary').innerHTML =
+      '<div class="hex-stat"><b>' + company.toFixed(1) + '／5</b><span>公司平均特質值</span></div>' +
+      '<div class="hex-stat"><b>' + covered + '／6</b><span>特質覆蓋達標軸</span></div>' +
+      '<div class="hex-stat"><b>' + highRisk + '</b><span>高單點風險項目</span></div>';
+  }
+  function buildCapabilityTable() {
+    var tbody = document.querySelector('#capabilityTable tbody');
+    tbody.innerHTML = '';
+    var rows = PEOPLE.map(function (p) { return { p: p, vals: personHex(p) }; });
+    HEX_AXES.forEach(function (axis, i) {
+      var values = rows.map(function (r) { return r.vals[i]; });
+      var strong = rows.filter(function (r) { return r.vals[i] >= 4; }).map(function (r) { return r.p.name; });
+      var verdict = strong.length >= 2 ? '可互補' : strong.length === 1 ? '單點偏高' : '特質缺口';
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + axis.label + '</td>' +
+        '<td class="num">' + avg(values).toFixed(1) + '</td>' +
+        '<td>' + safe(strong.join('、') || '無') + '</td>' +
+        '<td>' + verdict + '</td>';
+      tbody.appendChild(tr);
+    });
+  }
+  function buildRiskTable() {
+    var tbody = document.querySelector('#riskTable tbody');
+    tbody.innerHTML = '';
+    RISK_ITEMS.forEach(function (item) {
+      var label = item.risk === 'high' ? '高' : item.risk === 'mid' ? '中' : '低';
+      var cls = item.risk === 'high' ? 'risk-high' : item.risk === 'mid' ? 'risk-mid' : 'risk-low';
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td><b>' + safe(item.area) + '</b></td>' +
+        '<td>' + safe(item.owner) + '</td>' +
+        '<td>' + safe(item.backup) + '</td>' +
+        '<td><span class="' + cls + '">' + label + '</span></td>' +
+        '<td>' + safe(item.action) + '</td>';
+      tbody.appendChild(tr);
+    });
+  }
+  function buildHexDashboard() {
+    buildHexSummary();
+    buildHexGrid();
+    buildCapabilityTable();
+    buildRiskTable();
+  }
+
   document.getElementById('manualTable').addEventListener('input', function (e) {
     var t = e.target;
     var id = t.dataset.person;
@@ -1858,6 +2113,7 @@
     }
     lsSet(LS_SCORES, scores);
     buildCompositeTable();
+    buildHexDashboard();
   });
   document.getElementById('manualTable').addEventListener('click', function (e) {
     var cell = e.target.closest('td.ptoggle');
@@ -2055,6 +2311,7 @@
 
   buildManualTable();
   buildCompositeTable();
+  buildHexDashboard();
   buildDriftControls();
 })();
 </script>
