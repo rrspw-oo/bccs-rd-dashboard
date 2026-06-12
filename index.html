@@ -231,8 +231,24 @@
   .hex-head { display: flex; justify-content: space-between; gap: 8px; align-items: start; margin-bottom: 8px; }
   .hex-head b { font-size: 15px; }
   .hex-head span { color: var(--ink-3); font-size: 12px; text-align: right; }
-  .hex-svg { width: 100%; max-width: 240px; display: block; margin: 0 auto 8px; }
-  .hex-note { color: var(--ink-2); font-size: 12.5px; line-height: 1.6; }
+  .hex-note { color: var(--ink-2); font-size: 12.5px; line-height: 1.6; border-top: 1px dashed var(--line); padding-top: 8px; margin-top: 2px; }
+  #hexSummary { grid-template-columns: repeat(4, 1fr); }
+  .fus-legend { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; margin: 0 0 12px; font-size: 12px; color: var(--ink-2); }
+  .fus-legend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .fus-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 2px; }
+  .fus-head .name { font-size: 15.5px; font-weight: 700; line-height: 1.3; }
+  .fus-total { text-align: right; flex-shrink: 0; }
+  .fus-total b { display: block; font-size: 21px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+  .fus-total span.cap { font-size: 11px; color: var(--ink-3); display: block; margin-bottom: 3px; }
+  .fus-svg { width: 100%; max-width: 268px; display: block; margin: 0 auto 4px; }
+  .fus-meters { display: grid; gap: 5px; margin: 2px 0 10px; }
+  .fus-meter { display: grid; grid-template-columns: 58px 1fr 62px; gap: 8px; align-items: center; font-size: 11.5px; color: var(--ink-2); }
+  .fus-meter .bar i.tech { background: var(--c-blue); }
+  .fus-meter .bar i.trait { background: var(--c-teal); }
+  .fus-meter .v { text-align: right; font-variant-numeric: tabular-nums; }
+  .cat-chip { display: inline-block; padding: 0 7px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .cat-chip.tech { background: var(--c-blue-bg); color: var(--c-blue); }
+  .cat-chip.trait { background: var(--c-teal-bg); color: var(--c-teal); }
   .insight-grid { display: grid; grid-template-columns: 1fr 1.25fr; gap: 12px; margin-top: 12px; }
   .risk-high { color: var(--c-red); font-weight: 700; }
   .risk-mid { color: var(--c-amber); font-weight: 700; }
@@ -261,6 +277,7 @@
     .kpi-row { grid-template-columns: repeat(3, 1fr); }
     .sys-split { grid-template-columns: 1fr; }
     .hex-summary, .hex-grid, .insight-grid { grid-template-columns: 1fr; }
+    #hexSummary { grid-template-columns: 1fr 1fr; }
     .rank-card { grid-template-columns: 48px 1fr; }
     .rank-evi, .dims { grid-column: 1 / -1; }
     .road-grid { grid-template-columns: 1fr; }
@@ -824,8 +841,8 @@
 <section class="tab" id="t-manual">
   <h2>綜合項目評分（個人特質）</h2>
   <p class="h2-note">
-    這裡不重評產出、技術與架構能力；那些看「技術評分」分頁。
-    這裡只評個人特質：是否適合帶人、看到不對會不會主動提、是否有大局觀、是否只處理跟自己相關的事。
+    評分表只填個人特質：是否適合帶人、看到不對會不會主動提、是否有大局觀、是否只處理跟自己相關的事。
+    技術維度不在這裡重評，由「技術評分」分頁的版本庫證據自動帶入，與特質一起呈現在下方的綜合能力圖。
   </p>
   <div class="hex-summary">
     <div class="hex-stat"><b>技術評分</b><span>版本庫證據：產出、技術廣度、獨立交付、流程成熟度、接手維運</span></div>
@@ -865,10 +882,17 @@
     <tbody><!-- 由程式產生 --></tbody>
   </table>
 
-  <h2>個人特質六角圖</h2>
+  <h2>技術與特質綜合能力圖</h2>
   <p class="h2-note">
-    六角圖只看個人特質，不混入技術產出。技術能力請回到「技術評分」分頁判讀。
+    每張圖把同一個人的兩種證據放在同一個座標上：藍色區是「技術評分」分頁的五個版本庫維度，青色區是上方表格的六個特質維度，全部以零至五分同尺度呈現。
+    卡片依總分排序；上方表格的特質分數修改後，圖形與排序會即時重算。
+    判讀方式：往藍色偏的人先給技術深水區任務，往青色偏的人先給協調與帶人任務，兩區都飽滿的人是建置與管理雙軌候選。
   </p>
+  <div class="fus-legend">
+    <span><i style="background:var(--c-blue)"></i>技術維度（版本庫證據，五軸）</span>
+    <span><i style="background:var(--c-teal)"></i>個人特質（管理觀察，六軸）</span>
+    <span style="color:var(--ink-3)">圖內虛線為兩區分界；頂點圓點代表各軸實得分數</span>
+  </div>
   <div id="hexSummary" class="hex-summary"></div>
   <div id="hexGrid" class="hex-grid"></div>
 
@@ -878,9 +902,9 @@
   </p>
   <div class="insight-grid">
     <div>
-      <h3>個人特質覆蓋</h3>
+      <h3>能力軸覆蓋（技術與特質合併檢視）</h3>
       <table id="capabilityTable">
-        <thead><tr><th>特質軸</th><th class="num">平均</th><th>高分人員</th><th>判讀</th></tr></thead>
+        <thead><tr><th style="width:56px">類別</th><th>能力軸</th><th class="num">平均</th><th>高分人員</th><th>判讀</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
@@ -1804,16 +1828,29 @@
   var LS_DRIFT  = 'bccs-dash-drift-attr';
 
   var PEOPLE = [
-    { id: 'jsnn',  name: 'Jsnn',  tech: 23, role: 'advMDR 戰情中心、模型推論平台、代理端點服務' },
-    { id: 'wiwi',  name: 'Wiwi',  tech: 21, role: '文件知識庫系統開發中；生成式報告已交接' },
-    { id: 'aria',  name: 'Aria',  tech: 19, role: '專案管理系統接手主導' },
-    { id: 'ivan',  name: 'Ivan',  tech: 17, role: '社交工程系統、生成式報告系統維運' },
-    { id: 'dylan', name: 'Dylan', tech: 17, role: '弱點管理平台獨力開發' },
-    { id: 'ted',   name: 'Ted',   tech: 16, role: '資安大師後端接手' },
-    { id: 'nick',  name: 'Nick',  tech: 9,  role: 'advMDR 戰情中心交接初期' },
-    { id: 'zane',  name: 'Zane',  tech: 8,  role: '線上評量系統（訓練用）' },
-    { id: 'anne',  name: 'Anne',  tech: 0,  role: '公司官網維護（查無產出，技術分以 0 計）' }
+    { id: 'jsnn',  name: 'Jsnn',  tech: 23, techDims: [5, 5, 5, 5, 3], track: 'build',  role: 'advMDR 戰情中心、模型推論平台、代理端點服務' },
+    { id: 'wiwi',  name: 'Wiwi',  tech: 21, techDims: [5, 4, 5, 4, 3], track: 'build',  role: '文件知識庫系統開發中；生成式報告已交接' },
+    { id: 'aria',  name: 'Aria',  tech: 19, techDims: [4, 4, 4, 3, 4], track: 'verify', role: '專案管理系統接手主導' },
+    { id: 'ivan',  name: 'Ivan',  tech: 17, techDims: [3, 3, 3, 3, 5], track: 'ops',    role: '社交工程系統、生成式報告系統維運' },
+    { id: 'dylan', name: 'Dylan', tech: 17, techDims: [4, 3, 4, 4, 2], track: 'build',  role: '弱點管理平台獨力開發' },
+    { id: 'ted',   name: 'Ted',   tech: 16, techDims: [3, 2, 3, 5, 3], track: 'ops',    role: '資安大師後端接手' },
+    { id: 'nick',  name: 'Nick',  tech: 9,  techDims: [1, 2, 2, 2, 2], track: 'verify', role: 'advMDR 戰情中心交接初期' },
+    { id: 'zane',  name: 'Zane',  tech: 8,  techDims: [2, 1, 2, 2, 1], track: 'grow',   role: '線上評量系統（訓練用）' },
+    { id: 'anne',  name: 'Anne',  tech: 0,  techDims: [0, 0, 0, 0, 0], track: 'grow',   nodata: true, role: '公司官網維護（查無產出，技術分以 0 計）' }
   ];
+  var TECH_AXES = [
+    { key: 'output',   label: '產出量' },
+    { key: 'breadth',  label: '技術廣度' },
+    { key: 'delivery', label: '獨立交付' },
+    { key: 'process',  label: '流程成熟度' },
+    { key: 'takeover', label: '接手維運' }
+  ];
+  var TRACK_META = {
+    build:  { label: '從零到一建置者', cls: 'active' },
+    ops:    { label: '接手與維運者',   cls: 'maint' },
+    verify: { label: '待驗證（交接中）', cls: 'handover' },
+    grow:   { label: '培養中',         cls: 'shadow' }
+  };
   var DEFAULT_SCORES = {
     jsnn: { leadership: 3.2, proactive: 3.4, bigPicture: 3.4, collaboration: 4, ownership: 5, growth: 4, note: 'Jsnn是領域專家與高效率執行者\n跟自己本身專案的合作積極度非常踴躍且面對問題很正向，且程式上的問題都可以靠自己解決，同時負責了兩套系統的基礎架構，但是若跟非自身相關時，即使是整體流程或架構，比較不會提出自己想法，會認為it is what it is' },
     wiwi: { leadership: 4, proactive: 4.5, bigPicture: 5, collaboration: 3, ownership: 4.5, growth: 5, note: 'Wiwi 感覺是高階技術規劃者與挑戰者\n具備很難得的整體規劃能力跟開發能力，兼具廣度與深度的開發能力，擁有極強的自主驅動力與糾錯意識\n獨立開發傾向強，協作抗性高；渴望透過自己的產出跟價值獲得組織的「特權」與「特殊待遇」，如雙螢幕、遠端工作天數增加，若體制無法彈性對應，極易引發團隊管理衝突。如能類似Plantir裡面Alex Karp為那些特別的人闢出一條路的話就能將他的能力發揮到最大。' },
@@ -2003,71 +2040,135 @@
     var s = scores[p.id] || {};
     return DIMS.map(function (d) { return n(s[d]); });
   }
-  function radarSvg(vals) {
-    var cx = 90, cy = 90, r = 58;
+  function fusionRadar(techVals, traitVals) {
+    var cx = 116, cy = 104, r = 62, N = 11;
+    function ang(i) { return -Math.PI / 2 + i * Math.PI * 2 / N; }
     function pt(i, ratio) {
-      var a = -Math.PI / 2 + i * Math.PI * 2 / 6;
+      var a = ang(i);
       return [cx + Math.cos(a) * r * ratio, cy + Math.sin(a) * r * ratio];
     }
-    function poly(ratio) {
-      return HEX_AXES.map(function (_, i) { return pt(i, ratio).map(function (x) { return x.toFixed(1); }).join(','); }).join(' ');
+    function fmt(p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }
+    function ringPoly(ratio) {
+      var out = [];
+      for (var i = 0; i < N; i++) out.push(fmt(pt(i, ratio)));
+      return out.join(' ');
     }
-    var valuePoints = vals.map(function (v, i) { return pt(i, Math.max(0, Math.min(5, v)) / 5).map(function (x) { return x.toFixed(1); }).join(','); }).join(' ');
+    function arcPt(a) { return [cx + Math.cos(a) * r, cy + Math.sin(a) * r]; }
+    var half = Math.PI / N;
+    var bTech0 = ang(0) - half, bTech1 = ang(4) + half;
+    function wedge(a0, a1, fill) {
+      var large = (a1 - a0) > Math.PI ? 1 : 0;
+      return '<path d="M ' + cx + ' ' + cy + ' L ' + fmt(arcPt(a0)) + ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' + fmt(arcPt(a1)) + ' Z" fill="' + fill + '"/>';
+    }
+    var sectors = wedge(bTech0, bTech1, 'hsla(215,42%,44%,0.08)') + wedge(bTech1, bTech0 + Math.PI * 2, 'hsla(178,42%,34%,0.08)');
+    var dividers = [bTech0, bTech1].map(function (a) {
+      return '<line x1="' + cx + '" y1="' + cy + '" x2="' + arcPt(a)[0].toFixed(1) + '" y2="' + arcPt(a)[1].toFixed(1) + '" stroke="#b7bdc4" stroke-width="1" stroke-dasharray="3,3"/>';
+    }).join('');
     var rings = [1, 2, 3, 4, 5].map(function (level) {
-      return '<polygon points="' + poly(level / 5) + '" fill="none" stroke="#e3e6ea" stroke-width="1"/>';
+      return '<polygon points="' + ringPoly(level / 5) + '" fill="none" stroke="#e3e6ea" stroke-width="' + (level === 5 ? 1.2 : 0.8) + '"/>';
     }).join('');
-    var spokes = HEX_AXES.map(function (_, i) {
-      var p = pt(i, 1);
-      return '<line x1="' + cx + '" y1="' + cy + '" x2="' + p[0].toFixed(1) + '" y2="' + p[1].toFixed(1) + '" stroke="#e3e6ea" stroke-width="1"/>';
+    var spokes = '';
+    for (var i = 0; i < N; i++) {
+      var sp = pt(i, 1);
+      spokes += '<line x1="' + cx + '" y1="' + cy + '" x2="' + sp[0].toFixed(1) + '" y2="' + sp[1].toFixed(1) + '" stroke="#e3e6ea" stroke-width="0.8"/>';
+    }
+    function petal(vals, offset, fill, stroke) {
+      var hasValue = vals.some(function (v) { return v > 0; });
+      if (!hasValue) return '';
+      var pts = [fmt([cx, cy])];
+      var dots = '';
+      vals.forEach(function (v, i) {
+        var ratio = Math.max(0, Math.min(5, v)) / 5;
+        var p = pt(offset + i, ratio);
+        pts.push(fmt(p));
+        if (v > 0) dots += '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="2" fill="' + stroke + '"/>';
+      });
+      return '<polygon points="' + pts.join(' ') + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.8" stroke-linejoin="round"/>' + dots;
+    }
+    var techPetal = petal(techVals, 0, 'hsla(215,42%,44%,0.30)', 'hsl(215,42%,40%)');
+    var traitPetal = petal(traitVals, 5, 'hsla(178,42%,38%,0.30)', 'hsl(178,42%,32%)');
+    var noTech = techVals.every(function (v) { return !v; });
+    var emptyNote = noTech ? '<text x="' + (cx + r * 0.52).toFixed(1) + '" y="' + (cy - r * 0.26).toFixed(1) + '" text-anchor="middle" font-size="9" fill="hsl(8,48%,46%)">查無技術產出</text>' : '';
+    var allAxes = TECH_AXES.concat(HEX_AXES);
+    var labels = allAxes.map(function (axis, i) {
+      var a = ang(i);
+      var p = pt(i, 1.16);
+      var anchor = Math.cos(a) > 0.25 ? 'start' : Math.cos(a) < -0.25 ? 'end' : 'middle';
+      var dy = Math.sin(a) > 0.55 ? 7 : Math.sin(a) < -0.55 ? -3 : 2.5;
+      var color = i < 5 ? 'hsl(215,42%,38%)' : 'hsl(178,42%,28%)';
+      return '<text x="' + p[0].toFixed(1) + '" y="' + (p[1] + dy).toFixed(1) + '" text-anchor="' + anchor + '" font-size="9.5" font-weight="600" fill="' + color + '">' + axis.label + '</text>';
     }).join('');
-    var labels = HEX_AXES.map(function (axis, i) {
-      var p = pt(i, 1.24);
-      return '<text x="' + p[0].toFixed(1) + '" y="' + p[1].toFixed(1) + '" text-anchor="middle" dominant-baseline="middle" font-size="10.5" fill="#5a626b">' + axis.label + '</text>';
-    }).join('');
-    return '<svg class="hex-svg" viewBox="0 0 180 180" aria-hidden="true">' + rings + spokes + '<polygon points="' + valuePoints + '" fill="hsla(178,42%,40%,0.24)" stroke="hsl(178,42%,34%)" stroke-width="2"/>' + labels + '</svg>';
+    return '<svg class="fus-svg" viewBox="0 0 232 208" aria-hidden="true">' + sectors + rings + spokes + dividers + techPetal + traitPetal + emptyNote + labels + '</svg>';
+  }
+  function tendency(p, manual) {
+    if (p.nodata) return { label: '證據不足', cls: 'stalled' };
+    var diff = p.tech / 5 - manual / 6;
+    if (diff >= 0.6) return { label: '技術領先', cls: 'maint' };
+    if (diff <= -0.6) return { label: '特質領先', cls: 'active' };
+    return { label: '均衡發展', cls: 'shadow' };
   }
   function buildHexGrid() {
     var grid = document.getElementById('hexGrid');
     grid.innerHTML = '';
-    PEOPLE.forEach(function (p) {
-      var vals = personHex(p);
+    var rows = PEOPLE.map(function (p) {
+      var manual = personScore(p.id);
+      return { p: p, traits: personHex(p), manual: manual, total: p.tech + manual };
+    }).sort(function (a, b) { return b.total - a.total || b.p.tech - a.p.tech; });
+    rows.forEach(function (r) {
+      var p = r.p;
       var s = scores[p.id] || {};
+      var track = TRACK_META[p.track];
+      var tend = tendency(p, r.manual);
       var card = document.createElement('div');
       card.className = 'hex-card';
       card.innerHTML =
-        '<div class="hex-head"><b>' + safe(p.name) + '</b><span>平均 ' + avg(vals).toFixed(1) + '／5</span></div>' +
-        radarSvg(vals) +
+        '<div class="fus-head">' +
+          '<div><div class="name">' + safe(p.name) + '</div><span class="chip ' + track.cls + ' sm">' + track.label + '</span></div>' +
+          '<div class="fus-total"><b>' + r.total.toFixed(1) + '</b><span class="cap">總分／55</span><span class="chip ' + tend.cls + ' sm">' + tend.label + '</span></div>' +
+        '</div>' +
+        fusionRadar(p.techDims, r.traits) +
+        '<div class="fus-meters">' +
+          '<div class="fus-meter"><span>技術證據</span><div class="bar"><i class="tech" style="width:' + (p.tech / 25 * 100).toFixed(0) + '%"></i></div><span class="v">' + p.tech + '／25</span></div>' +
+          '<div class="fus-meter"><span>個人特質</span><div class="bar"><i class="trait" style="width:' + (r.manual / 30 * 100).toFixed(0) + '%"></i></div><span class="v">' + r.manual.toFixed(1) + '／30</span></div>' +
+        '</div>' +
         '<div class="hex-note">' + safe(s.note || '尚未匯入或填寫特質備註') + '</div>';
       grid.appendChild(card);
     });
   }
   function buildHexSummary() {
-    var rows = PEOPLE.map(personHex);
-    var axisAvg = HEX_AXES.map(function (_, i) { return avg(rows.map(function (r) { return r[i]; })); });
-    var company = avg(axisAvg);
-    var covered = axisAvg.filter(function (v) { return v >= 3.5; }).length;
+    var traitRows = PEOPLE.map(personHex);
+    var traitAxisAvg = HEX_AXES.map(function (_, i) { return avg(traitRows.map(function (r) { return r[i]; })); });
+    var techAxisAvg = TECH_AXES.map(function (_, i) { return avg(PEOPLE.map(function (p) { return p.techDims[i]; })); });
+    var covered = techAxisAvg.concat(traitAxisAvg).filter(function (v) { return v >= 3.5; }).length;
     var highRisk = RISK_ITEMS.filter(function (r) { return r.risk === 'high'; }).length;
     document.getElementById('hexSummary').innerHTML =
-      '<div class="hex-stat"><b>' + company.toFixed(1) + '／5</b><span>公司平均特質值</span></div>' +
-      '<div class="hex-stat"><b>' + covered + '／6</b><span>特質覆蓋達標軸</span></div>' +
-      '<div class="hex-stat"><b>' + highRisk + '</b><span>高單點風險項目</span></div>';
+      '<div class="hex-stat"><b style="color:var(--c-blue)">' + avg(techAxisAvg).toFixed(1) + '／5</b><span>公司技術維度平均</span></div>' +
+      '<div class="hex-stat"><b>' + avg(traitAxisAvg).toFixed(1) + '／5</b><span>公司特質維度平均</span></div>' +
+      '<div class="hex-stat"><b>' + covered + '／11</b><span>能力軸覆蓋達標（平均 3.5 以上）</span></div>' +
+      '<div class="hex-stat"><b style="color:var(--c-red)">' + highRisk + '</b><span>高單點風險項目</span></div>';
   }
   function buildCapabilityTable() {
     var tbody = document.querySelector('#capabilityTable tbody');
     tbody.innerHTML = '';
-    var rows = PEOPLE.map(function (p) { return { p: p, vals: personHex(p) }; });
-    HEX_AXES.forEach(function (axis, i) {
-      var values = rows.map(function (r) { return r.vals[i]; });
-      var strong = rows.filter(function (r) { return r.vals[i] >= 4; }).map(function (r) { return r.p.name; });
-      var verdict = strong.length >= 2 ? '可互補' : strong.length === 1 ? '單點偏高' : '特質缺口';
-      var tr = document.createElement('tr');
-      tr.innerHTML =
-        '<td>' + axis.label + '</td>' +
-        '<td class="num">' + avg(values).toFixed(1) + '</td>' +
-        '<td>' + safe(strong.join('、') || '無') + '</td>' +
-        '<td>' + verdict + '</td>';
-      tbody.appendChild(tr);
-    });
+    function addRows(axes, getVal, catLabel, catCls, gapWord) {
+      axes.forEach(function (axis, i) {
+        var rows = PEOPLE.map(function (p) { return { p: p, val: getVal(p, i) }; });
+        var strong = rows.filter(function (r) { return r.val >= 4; }).map(function (r) { return r.p.name; });
+        var verdict = strong.length >= 2 ? '可互補' : strong.length === 1 ? '單點偏高' : gapWord;
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td><span class="cat-chip ' + catCls + '">' + catLabel + '</span></td>' +
+          '<td>' + axis.label + '</td>' +
+          '<td class="num">' + avg(rows.map(function (r) { return r.val; })).toFixed(1) + '</td>' +
+          '<td>' + safe(strong.join('、') || '無') + '</td>' +
+          '<td>' + verdict + '</td>';
+        tbody.appendChild(tr);
+      });
+    }
+    addRows(TECH_AXES, function (p, i) { return p.techDims[i]; }, '技術', 'tech', '技術缺口');
+    var traitVals = {};
+    PEOPLE.forEach(function (p) { traitVals[p.id] = personHex(p); });
+    addRows(HEX_AXES, function (p, i) { return traitVals[p.id][i]; }, '特質', 'trait', '特質缺口');
   }
   function buildRiskTable() {
     var tbody = document.querySelector('#riskTable tbody');
