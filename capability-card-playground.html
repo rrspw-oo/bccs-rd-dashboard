@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>綜合能力卡設計比較 Playground</title>
+<style>
+  :root {
+    --bg: #16181c;
+    --panel: #1e2127;
+    --panel-2: #252932;
+    --line: #343a45;
+    --txt: #e8eaed;
+    --txt-2: #9aa3af;
+    --acc: #5cc8c2;
+    --c-teal: hsl(178, 42%, 34%);
+    --c-blue: hsl(215, 42%, 44%);
+    --c-amber: hsl(35, 52%, 44%);
+    --c-red: hsl(8, 48%, 46%);
+    --c-violet: hsl(262, 32%, 50%);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "PingFang TC","Noto Sans TC",sans-serif;
+    background: var(--bg); color: var(--txt);
+    font-size: 13px; line-height: 1.6;
+    display: grid; grid-template-columns: 300px 1fr; height: 100vh; overflow: hidden;
+  }
+  aside { background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto; padding: 16px; }
+  main { display: grid; grid-template-rows: 1fr auto; overflow: hidden; }
+  .preview-wrap { overflow-y: auto; background: #f6f7f8; padding: 20px; }
+  h1 { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+  .sub { color: var(--txt-2); font-size: 11.5px; margin-bottom: 14px; }
+  .grp { margin-bottom: 18px; }
+  .grp > b { display: block; font-size: 11px; letter-spacing: 1px; color: var(--txt-2); text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+  .variant { border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; margin-bottom: 6px; cursor: pointer; background: var(--panel-2); }
+  .variant:hover { border-color: var(--txt-2); }
+  .variant.on { border-color: var(--acc); background: #20302f; }
+  .variant b { font-size: 12.5px; display: block; }
+  .variant span { font-size: 11px; color: var(--txt-2); }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .row label { font-size: 12.5px; }
+  select, .seg { font: inherit; font-size: 12px; background: var(--panel-2); color: var(--txt); border: 1px solid var(--line); border-radius: 6px; padding: 3px 6px; }
+  .seg { display: inline-flex; padding: 2px; gap: 2px; }
+  .seg button { font: inherit; font-size: 11.5px; border: none; background: none; color: var(--txt-2); border-radius: 4px; padding: 2px 9px; cursor: pointer; }
+  .seg button.on { background: var(--acc); color: #10211f; font-weight: 700; }
+  .toggle { position: relative; width: 32px; height: 18px; border-radius: 9px; background: var(--line); cursor: pointer; flex-shrink: 0; }
+  .toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--txt-2); transition: 0.15s; }
+  .toggle.on { background: var(--acc); }
+  .toggle.on::after { left: 16px; background: #10211f; }
+  input[type="range"] { width: 100px; accent-color: var(--acc); }
+  .people { display: flex; flex-wrap: wrap; gap: 4px; }
+  .people button { font: inherit; font-size: 11.5px; border: 1px solid var(--line); background: var(--panel-2); color: var(--txt-2); border-radius: 999px; padding: 1px 10px; cursor: pointer; }
+  .people button.on { border-color: var(--acc); color: var(--acc); }
+  .presets { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .presets button { font: inherit; font-size: 11.5px; border: 1px solid var(--line); background: var(--panel-2); color: var(--txt); border-radius: 6px; padding: 5px 4px; cursor: pointer; }
+  .presets button:hover { border-color: var(--acc); color: var(--acc); }
+  .prompt-bar { background: var(--panel); border-top: 1px solid var(--line); padding: 12px 20px; display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: start; }
+  #promptOut { font-size: 12px; color: var(--txt-2); line-height: 1.65; max-height: 92px; overflow-y: auto; white-space: pre-wrap; }
+  #copyBtn { font: inherit; font-size: 12.5px; font-weight: 700; background: var(--acc); color: #10211f; border: none; border-radius: 7px; padding: 8px 18px; cursor: pointer; white-space: nowrap; }
+  #copyBtn.ok { background: #7ddf8a; }
+
+  .grid { display: grid; gap: 14px; max-width: 1100px; margin: 0 auto; }
+  .card { background: #fff; border: 1px solid #e3e6ea; border-radius: 8px; padding: 14px 16px; color: #2b3036; }
+  .c-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .c-head .name { font-size: 15px; font-weight: 700; }
+  .c-total { text-align: right; flex-shrink: 0; }
+  .c-total b { display: block; font-size: 19px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+  .c-total span { font-size: 10.5px; color: #8a929b; display: block; }
+  .chip { display: inline-block; padding: 0 8px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .chip.active { background: hsl(178,42%,95%); color: var(--c-teal); }
+  .chip.maint { background: hsl(215,42%,95%); color: var(--c-blue); }
+  .chip.handover { background: hsl(35,52%,94%); color: var(--c-amber); }
+  .chip.stalled { background: hsl(8,48%,95%); color: var(--c-red); }
+  .chip.shadow { background: hsl(262,32%,95%); color: var(--c-violet); }
+  .chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; }
+  .meters { display: grid; gap: 5px; margin: 8px 0 2px; }
+  .meter { display: grid; grid-template-columns: 56px 1fr 58px; gap: 8px; align-items: center; font-size: 11px; color: #5a626b; }
+  .meter .bar { height: 6px; background: #edeff1; border-radius: 3px; overflow: hidden; }
+  .meter .bar i { display: block; height: 100%; border-radius: 3px; }
+  .meter .v { text-align: right; font-variant-numeric: tabular-nums; }
+  .sw { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; font-size: 11px; align-items: baseline; }
+  .sw .lab { color: #8a929b; flex-shrink: 0; }
+  .note { color: #5a626b; font-size: 11.5px; line-height: 1.55; border-top: 1px dashed #e3e6ea; padding-top: 7px; margin-top: 9px; }
+  .note.full { white-space: pre-wrap; }
+  .duo { display: flex; gap: 4px; justify-content: center; align-items: center; }
+  .bars { display: grid; gap: 3px; margin-top: 8px; }
+  .brow { display: grid; grid-template-columns: 64px 1fr 22px; gap: 7px; align-items: center; font-size: 10.5px; color: #5a626b; }
+  .brow .tr { height: 8px; background: #f0f1f3; border-radius: 2px; position: relative; }
+  .brow .tr i { position: absolute; left: 0; top: 0; height: 100%; border-radius: 2px; }
+  .brow .tr s { position: absolute; top: -1px; bottom: -1px; width: 1px; background: #dde0e4; }
+  .brow .bv { text-align: right; font-variant-numeric: tabular-nums; }
+  .bsep { font-size: 10px; font-weight: 700; letter-spacing: 1px; margin-top: 5px; }
+  .bsep.t1 { color: var(--c-blue); }
+  .bsep.t2 { color: var(--c-teal); }
+  .legend { display: flex; gap: 16px; font-size: 11.5px; color: #5a626b; max-width: 1100px; margin: 0 auto 12px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; }
+</style>
+</head>
+<body>
+<aside>
+  <h1>綜合能力卡設計比較</h1>
+  <div class="sub">調整後把底部指令複製回 Claude 套用到儀表板</div>
+
+  <div class="grp">
+    <b>快速組合</b>
+    <div class="presets">
+      <button data-preset="exec">主管速覽</button>
+      <button data-preset="full">完整評估</button>
+      <button data-preset="chart">圖表對焦</button>
+      <button data-preset="data">數據導向</button>
+    </div>
+  </div>
+
+  <div class="grp">
+    <b>設計方案</b>
+    <div class="variant" data-v="fusion"><b>融合放射圖（現行）</b><span>11 軸一張圖，藍青雙扇區</span></div>
+    <div class="variant" data-v="duo"><b>雙圖並排</b><span>技術五邊形＋特質六角形，各自乾淨</span></div>
+    <div class="variant" data-v="bars"><b>長條剖面</b><span>11 條橫向長條，分組分色，最易讀值</span></div>
+    <div class="variant" data-v="compact"><b>精簡摘要卡</b><span>無圖表，只留量條與強弱項結論</span></div>
+  </div>
+
+  <div class="grp">
+    <b>資訊密度</b>
+    <div class="row"><label>備註顯示</label>
+      <select id="noteMode">
+        <option value="short">一行摘要</option>
+        <option value="full">完整備註</option>
+        <option value="none">隱藏</option>
+      </select>
+    </div>
+    <div class="row"><label>分數量條</label><div class="toggle on" data-t="meters"></div></div>
+    <div class="row"><label>定位標籤</label><div class="toggle on" data-t="track"></div></div>
+    <div class="row"><label>傾向標籤</label><div class="toggle on" data-t="tend"></div></div>
+    <div class="row"><label>強弱項結論</label><div class="toggle" data-t="sw"></div></div>
+    <div class="row"><label>軸上數值</label><div class="toggle" data-t="axisVal"></div></div>
+  </div>
+
+  <div class="grp">
+    <b>版面</b>
+    <div class="row"><label>每列卡片</label>
+      <div class="seg" id="colsSeg"><button data-c="2">2</button><button data-c="3" class="on">3</button></div>
+    </div>
+    <div class="row"><label>圖表大小</label><input type="range" id="chartSize" min="80" max="130" value="100"></div>
+  </div>
+
+  <div class="grp">
+    <b>預覽人選</b>
+    <div class="people" id="peoplePick"></div>
+  </div>
+</aside>
+
+<main>
+  <div class="preview-wrap">
+    <div class="legend">
+      <span><i style="background:var(--c-blue)"></i>技術維度（版本庫證據）</span>
+      <span><i style="background:var(--c-teal)"></i>個人特質（管理觀察）</span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+  <div class="prompt-bar">
+    <div id="promptOut"></div>
+    <button id="copyBtn">複製指令</button>
+  </div>
+</main>
+
+<script>
+(function () {
+  var TECH_AXES = ['產出量', '技術廣度', '獨立交付', '流程成熟度', '接手維運'];
+  var TRAIT_AXES = ['領導', '主動', '大局', '協作', '責任', '成長'];
+  var TRACK_META = {
+    build: { label: '從零到一建置者', cls: 'active' },
+    ops: { label: '接手與維運者', cls: 'maint' },
+    verify: { label: '待驗證（交接中）', cls: 'handover' },
+    grow: { label: '培養中', cls: 'shadow' }
+  };
+  var PEOPLE = [
+    { id: 'jsnn', name: 'Jsnn', tech: [5, 5, 5, 5, 3], traits: [3.2, 3.4, 3.4, 4, 5, 4], track: 'build',
+      short: 'Jsnn 是領域專家與高效率執行者，能獨立解決程式問題並負責底層架構；非自身專案時較少主動提出整體想法。',
+      full: 'Jsnn是領域專家與高效率執行者\n跟自己本身專案的合作積極度非常踴躍且面對問題很正向，且程式上的問題都可以靠自己解決，同時負責了兩套系統的基礎架構，但是若跟非自身相關時，即使是整體流程或架構，比較不會提出自己想法，會認為it is what it is' },
+    { id: 'wiwi', name: 'Wiwi', tech: [5, 4, 5, 4, 3], traits: [4, 4.5, 5, 3, 4.5, 5], track: 'build',
+      short: 'Wiwi 是高階技術規劃者與挑戰者，具備整體規劃與開發能力；獨立開發傾向強，協作抗性高。',
+      full: 'Wiwi 感覺是高階技術規劃者與挑戰者\n具備很難得的整體規劃能力跟開發能力，兼具廣度與深度的開發能力，擁有極強的自主驅動力與糾錯意識\n獨立開發傾向強，協作抗性高；渴望透過自己的產出跟價值獲得組織的「特權」與「特殊待遇」，若體制無法彈性對應，極易引發團隊管理衝突。' },
+    { id: 'aria', name: 'Aria', tech: [4, 4, 4, 3, 4], traits: [2.5, 3, 2.5, 5, 4.5, 3.5], track: 'verify',
+      short: 'Aria 是穩定協調者，重和諧且負責任；決策主導性較弱，適合在穩定團隊結構中執行任務。',
+      full: 'Aria 默默耕耘的溫暖協調者\n隨和、重和諧且負責任，是值得信賴的團隊助力；然而，過度配合易忽視個人底線，在決策時缺乏主導性，面對僵局較難果斷拍板，較適合在穩定的團隊結構中執行任務' },
+    { id: 'ivan', name: 'Ivan', tech: [3, 3, 3, 3, 5], traits: [2.5, 2.5, 2, 3, 4, 3], track: 'ops',
+      short: 'Ivan 會按照需求執行，也會積極回覆使用者問題；團隊互動較被動，但交辦事項會完成。',
+      full: 'Ivan至從接社交工程後有將社交工程做的更符合客戶需求\n會按照需求執行的開發者，也會積極回覆使用者問題，但不太與團隊互動或討論，比較被動，可是公告或是交辦的事情都會做。' },
+    { id: 'dylan', name: 'Dylan', tech: [4, 3, 4, 4, 2], traits: [3.5, 3, 3.5, 5, 3.5, 3.5], track: 'build',
+      short: 'Dylan 是外向執行者，對外溝通穩健；依賴明確需求，任務模糊時容易偏離主軸。',
+      full: 'Dylan是外向的執行者\n對外應對與會議溝通時，台風穩健、講話清楚，能將技術需求轉化為流暢的表達；極度依賴明確的需求定案，若任務模糊容易因過度反思細節而偏離開發主軸。' },
+    { id: 'ted', name: 'Ted', tech: [3, 2, 3, 5, 3], traits: [3.5, 4.5, 3, 4, 5, 4.5], track: 'ops',
+      short: 'Ted 對上版紀律執行徹底，能分層測試、切出獨立功能並管理技債。',
+      full: '端看Ted目前上版的紀錄觀察到是唯一對上版紀律執行最徹底的人：實作提交明確標註測試層級、範圍變大時重開決策而不是硬塞、技債不順手亂修而是登記排程處理。' },
+    { id: 'nick', name: 'Nick', tech: [1, 2, 2, 2, 2], traits: [3.5, 4.5, 3.5, 4, 4, 5], track: 'verify',
+      short: 'Nick 入職初期已展現獨立思考與改善效率的傾向，Jsnn 對合作評價正向。',
+      full: 'Nick入職剛滿兩個月\n成果發表具備獨立思考性、實作過程中會積極提出更好的方式改善效率效能，跟Jsnn合作後評價非常正向，也很快熟悉戰情中心在做的事。' },
+    { id: 'zane', name: 'Zane', tech: [2, 1, 2, 2, 1], traits: [2, 2.5, 2, 2, 3, 3], track: 'grow',
+      short: 'Zane 抗壓性高，但需要避免未經判斷直接照工具輸出實作。',
+      full: '抗壓性高，但有點擔憂若是要跟其他人合作的話會不經思考的直接參照AI指示實作。' },
+    { id: 'anne', name: 'Anne', tech: [0, 0, 0, 0, 0], traits: [3, 3.5, 3, 3, 3, 4], track: 'grow', nodata: true,
+      short: 'Anne 具備獨立思考力，但目前官網產出仍需版本控制資料佐證。',
+      full: '雖然才剛接官網專案，但是從會議上的問答上感覺得出來有獨立思考力以及需要按照自己的步調做事。' }
+  ];
+
+  var VARIANT_NAMES = { fusion: '融合放射圖', duo: '雙圖並排', bars: '長條剖面', compact: '精簡摘要卡' };
+  var DEFAULTS = { variant: 'fusion', noteMode: 'short', meters: true, track: true, tend: true, sw: false, axisVal: false, cols: 3, size: 100 };
+  var state = JSON.parse(JSON.stringify(DEFAULTS));
+  state.picked = ['wiwi', 'ivan', 'anne'];
+
+  var BLUE = 'hsl(215,42%,40%)', TEAL = 'hsl(178,42%,32%)';
+  var BLUE_F = 'hsla(215,42%,44%,0.30)', TEAL_F = 'hsla(178,42%,38%,0.30)';
+
+  function sum(a) { return a.reduce(function (x, y) { return x + y; }, 0); }
+  function esc(t) {
+    return String(t).replace(/[&<>"]/g, function (m) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[m]; });
+  }
+  function tendency(p) {
+    if (p.nodata) return { label: '證據不足', cls: 'stalled' };
+    var d = sum(p.tech) / 5 - sum(p.traits) / 6;
+    if (d >= 0.6) return { label: '技術領先', cls: 'maint' };
+    if (d <= -0.6) return { label: '特質領先', cls: 'active' };
+    return { label: '均衡發展', cls: 'shadow' };
+  }
+  function strengths(p) {
+    var all = [];
+    if (!p.nodata) TECH_AXES.forEach(function (a, i) { all.push({ a: a, v: p.tech[i] }); });
+    TRAIT_AXES.forEach(function (a, i) { all.push({ a: a, v: p.traits[i] }); });
+    return {
+      hi: all.filter(function (x) { return x.v >= 4; }).map(function (x) { return x.a; }),
+      lo: all.filter(function (x) { return x.v <= 2; }).map(function (x) { return x.a; })
+    };
+  }
+
+  function fusionSvg(p, scale) {
+    var cx = 116, cy = 104, r = 62, N = 11;
+    function ang(i) { return -Math.PI / 2 + i * Math.PI * 2 / N; }
+    function pt(i, ratio) { var a = ang(i); return [cx + Math.cos(a) * r * ratio, cy + Math.sin(a) * r * ratio]; }
+    function fmt(q) { return q[0].toFixed(1) + ',' + q[1].toFixed(1); }
+    function arcPt(a) { return [cx + Math.cos(a) * r, cy + Math.sin(a) * r]; }
+    var half = Math.PI / N, b0 = ang(0) - half, b1 = ang(4) + half;
+    function wedge(a0, a1, fill) {
+      var large = (a1 - a0) > Math.PI ? 1 : 0;
+      return '<path d="M ' + cx + ' ' + cy + ' L ' + fmt(arcPt(a0)) + ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' + fmt(arcPt(a1)) + ' Z" fill="' + fill + '"/>';
+    }
+    var out = wedge(b0, b1, 'hsla(215,42%,44%,0.08)') + wedge(b1, b0 + Math.PI * 2, 'hsla(178,42%,34%,0.08)');
+    [b0, b1].forEach(function (a) {
+      out += '<line x1="' + cx + '" y1="' + cy + '" x2="' + arcPt(a)[0].toFixed(1) + '" y2="' + arcPt(a)[1].toFixed(1) + '" stroke="#b7bdc4" stroke-width="1" stroke-dasharray="3,3"/>';
+    });
+    for (var lv = 1; lv <= 5; lv++) {
+      var ring = [];
+      for (var i = 0; i < N; i++) ring.push(fmt(pt(i, lv / 5)));
+      out += '<polygon points="' + ring.join(' ') + '" fill="none" stroke="#e3e6ea" stroke-width="' + (lv === 5 ? 1.2 : 0.8) + '"/>';
+    }
+    function petal(vals, off, fill, stroke) {
+      if (!vals.some(function (v) { return v > 0; })) return '';
+      var pts = [fmt([cx, cy])], dots = '';
+      vals.forEach(function (v, i) {
+        var q = pt(off + i, Math.max(0, Math.min(5, v)) / 5);
+        pts.push(fmt(q));
+        if (v > 0) dots += '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="2" fill="' + stroke + '"/>';
+        if (v > 0 && state.axisVal) {
+          var qa = pt(off + i, Math.max(0.28, Math.min(5, v) / 5) + 0.13);
+          dots += '<text x="' + qa[0].toFixed(1) + '" y="' + (qa[1] + 3).toFixed(1) + '" text-anchor="middle" font-size="8" font-weight="700" fill="' + stroke + '">' + v + '</text>';
+        }
+      });
+      return '<polygon points="' + pts.join(' ') + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.8" stroke-linejoin="round"/>' + dots;
+    }
+    out += petal(p.tech, 0, BLUE_F, BLUE) + petal(p.traits, 5, TEAL_F, TEAL);
+    if (p.nodata) out += '<text x="' + (cx + r * 0.52).toFixed(1) + '" y="' + (cy - r * 0.26).toFixed(1) + '" text-anchor="middle" font-size="9" fill="hsl(8,48%,46%)">查無技術產出</text>';
+    TECH_AXES.concat(TRAIT_AXES).forEach(function (lab, i) {
+      var a = ang(i), q = pt(i, 1.16);
+      var anchor = Math.cos(a) > 0.25 ? 'start' : Math.cos(a) < -0.25 ? 'end' : 'middle';
+      var dy = Math.sin(a) > 0.55 ? 7 : Math.sin(a) < -0.55 ? -3 : 2.5;
+      out += '<text x="' + q[0].toFixed(1) + '" y="' + (q[1] + dy).toFixed(1) + '" text-anchor="' + anchor + '" font-size="9.5" font-weight="600" fill="' + (i < 5 ? BLUE : TEAL) + '">' + lab + '</text>';
+    });
+    return '<svg viewBox="0 0 232 208" style="width:100%;max-width:' + Math.round(268 * scale) + 'px;display:block;margin:4px auto" aria-hidden="true">' + out + '</svg>';
+  }
+
+  function miniSvg(labels, vals, fill, stroke, scale, nodata) {
+    var cx = 84, cy = 80, r = 46, N = labels.length;
+    function pt(i, ratio) {
+      var a = -Math.PI / 2 + i * Math.PI * 2 / N;
+      return [cx + Math.cos(a) * r * ratio, cy + Math.sin(a) * r * ratio];
+    }
+    function fmt(q) { return q[0].toFixed(1) + ',' + q[1].toFixed(1); }
+    var out = '';
+    for (var lv = 1; lv <= 5; lv++) {
+      var ring = [];
+      for (var i = 0; i < N; i++) ring.push(fmt(pt(i, lv / 5)));
+      out += '<polygon points="' + ring.join(' ') + '" fill="none" stroke="#e3e6ea" stroke-width="' + (lv === 5 ? 1.1 : 0.7) + '"/>';
+    }
+    for (var j = 0; j < N; j++) {
+      var sp = pt(j, 1);
+      out += '<line x1="' + cx + '" y1="' + cy + '" x2="' + sp[0].toFixed(1) + '" y2="' + sp[1].toFixed(1) + '" stroke="#e3e6ea" stroke-width="0.7"/>';
+    }
+    if (nodata) {
+      out += '<text x="' + cx + '" y="' + cy + '" text-anchor="middle" font-size="9" fill="hsl(8,48%,46%)">查無產出</text>';
+    } else {
+      var pts = vals.map(function (v, i) { return fmt(pt(i, Math.max(0, Math.min(5, v)) / 5)); });
+      out += '<polygon points="' + pts.join(' ') + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.8" stroke-linejoin="round"/>';
+      vals.forEach(function (v, i) {
+        var q = pt(i, Math.max(0, Math.min(5, v)) / 5);
+        out += '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="1.8" fill="' + stroke + '"/>';
+        if (state.axisVal) {
+          var qa = pt(i, Math.max(0.3, Math.min(5, v) / 5) + 0.17);
+          out += '<text x="' + qa[0].toFixed(1) + '" y="' + (qa[1] + 3).toFixed(1) + '" text-anchor="middle" font-size="8" font-weight="700" fill="' + stroke + '">' + v + '</text>';
+        }
+      });
+    }
+    labels.forEach(function (lab, i) {
+      var a = -Math.PI / 2 + i * Math.PI * 2 / N, q = pt(i, 1.2);
+      var anchor = Math.cos(a) > 0.25 ? 'start' : Math.cos(a) < -0.25 ? 'end' : 'middle';
+      var dy = Math.sin(a) > 0.55 ? 7 : Math.sin(a) < -0.55 ? -2 : 2.5;
+      out += '<text x="' + q[0].toFixed(1) + '" y="' + (q[1] + dy).toFixed(1) + '" text-anchor="' + anchor + '" font-size="8.5" font-weight="600" fill="' + stroke + '">' + lab + '</text>';
+    });
+    return '<svg viewBox="0 0 168 158" style="width:' + Math.round(150 * scale) + 'px" aria-hidden="true">' + out + '</svg>';
+  }
+
+  function barsHtml(p, scale) {
+    function rows(labels, vals, color) {
+      return labels.map(function (lab, i) {
+        var v = vals[i];
+        var ticks = [1, 2, 3, 4].map(function (t) { return '<s style="left:' + (t * 20) + '%"></s>'; }).join('');
+        return '<div class="brow"><span>' + lab + '</span><div class="tr">' + ticks +
+          '<i style="width:' + (v / 5 * 100) + '%;background:' + color + '"></i></div><span class="bv">' + (v || '－') + '</span></div>';
+      }).join('');
+    }
+    return '<div class="bars" style="font-size:' + (10.5 * scale / 100) + 'px">' +
+      '<div class="bsep t1">技術維度' + (p.nodata ? '（查無產出）' : '') + '</div>' + rows(TECH_AXES, p.tech, 'var(--c-blue)') +
+      '<div class="bsep t2">個人特質</div>' + rows(TRAIT_AXES, p.traits, 'var(--c-teal)') + '</div>';
+  }
+
+  function cardHtml(p) {
+    var techSum = sum(p.tech), traitSum = sum(p.traits), total = techSum + traitSum;
+    var tend = tendency(p), track = TRACK_META[p.track];
+    var scale = state.size / 100;
+    var h = '<div class="card"><div class="c-head"><div><div class="name">' + p.name + '</div><div class="chips">';
+    if (state.track) h += '<span class="chip ' + track.cls + '">' + track.label + '</span>';
+    if (state.tend) h += '<span class="chip ' + tend.cls + '">' + tend.label + '</span>';
+    h += '</div></div><div class="c-total"><b>' + total.toFixed(1) + '</b><span>總分／55</span></div></div>';
+
+    if (state.variant === 'fusion') h += fusionSvg(p, scale);
+    if (state.variant === 'duo') h += '<div class="duo">' + miniSvg(TECH_AXES, p.tech, BLUE_F, BLUE, scale, p.nodata) + miniSvg(TRAIT_AXES, p.traits, TEAL_F, TEAL, scale, false) + '</div>';
+    if (state.variant === 'bars') h += barsHtml(p, state.size);
+
+    if (state.meters || state.variant === 'compact') {
+      h += '<div class="meters">' +
+        '<div class="meter"><span>技術證據</span><div class="bar"><i style="width:' + (techSum / 25 * 100) + '%;background:var(--c-blue)"></i></div><span class="v">' + techSum + '／25</span></div>' +
+        '<div class="meter"><span>個人特質</span><div class="bar"><i style="width:' + (traitSum / 30 * 100) + '%;background:var(--c-teal)"></i></div><span class="v">' + traitSum.toFixed(1) + '／30</span></div></div>';
+    }
+    if (state.sw || state.variant === 'compact') {
+      var s = strengths(p);
+      h += '<div class="sw"><span class="lab">強項</span>' +
+        (s.hi.length ? s.hi.map(function (a) { return '<span class="chip active">' + a + '</span>'; }).join('') : '<span style="color:#8a929b">無達 4 分軸</span>') +
+        '</div><div class="sw"><span class="lab">待補</span>' +
+        (p.nodata ? '<span class="chip stalled">技術證據不足</span>' : '') +
+        (s.lo.length ? s.lo.map(function (a) { return '<span class="chip handover">' + a + '</span>'; }).join('') : (p.nodata ? '' : '<span style="color:#8a929b">無低於 2 分軸</span>')) + '</div>';
+    }
+    if (state.noteMode === 'short') h += '<div class="note">' + esc(p.short) + '</div>';
+    if (state.noteMode === 'full') h += '<div class="note full">' + esc(p.full) + '</div>';
+    return h + '</div>';
+  }
+
+  function renderPreview() {
+    var grid = document.getElementById('grid');
+    grid.style.gridTemplateColumns = 'repeat(' + state.cols + ', 1fr)';
+    grid.innerHTML = PEOPLE.filter(function (p) { return state.picked.indexOf(p.id) !== -1; })
+      .sort(function (a, b) { return (sum(b.tech) + sum(b.traits)) - (sum(a.tech) + sum(a.traits)); })
+      .map(cardHtml).join('');
+    document.querySelectorAll('.variant').forEach(function (el) { el.classList.toggle('on', el.dataset.v === state.variant); });
+    document.querySelectorAll('.toggle').forEach(function (el) { el.classList.toggle('on', !!state[el.dataset.t]); });
+    document.querySelectorAll('#colsSeg button').forEach(function (el) { el.classList.toggle('on', +el.dataset.c === state.cols); });
+    document.getElementById('noteMode').value = state.noteMode;
+    document.getElementById('chartSize').value = state.size;
+    document.querySelectorAll('.people button').forEach(function (el) { el.classList.toggle('on', state.picked.indexOf(el.dataset.id) !== -1); });
+  }
+
+  function updatePrompt() {
+    var parts = [];
+    var vDesc = {
+      fusion: '維持現行的 11 軸融合放射圖（藍色技術扇區＋青色特質扇區）',
+      duo: '改為「雙圖並排」：每人左邊一張五軸技術五邊形（藍）、右邊一張六軸特質六角形（青），兩張小圖並排，Anne 這種查無技術產出者技術圖留白標註',
+      bars: '改為「長條剖面」：不畫放射圖，改為 11 條橫向長條，技術五軸一組（藍）、特質六軸一組（青），每條右側標值、背景有刻度線',
+      compact: '改為「精簡摘要卡」：完全不畫圖表，只保留總分、技術與特質兩條量條，以及自動算出的強項（4 分以上軸）與待補（2 分以下軸）標籤'
+    };
+    parts.push(vDesc[state.variant]);
+    if (state.noteMode !== DEFAULTS.noteMode) parts.push(state.noteMode === 'full' ? '備註顯示完整內容' : '隱藏備註文字');
+    else parts.push('備註只顯示一行摘要（用既有的 SHORT_DEFAULT_NOTES）');
+    if (!state.meters && state.variant !== 'compact') parts.push('拿掉技術與特質分數量條');
+    if (!state.track) parts.push('拿掉定位標籤');
+    if (!state.tend) parts.push('拿掉傾向標籤');
+    if (state.sw && state.variant !== 'compact') parts.push('在卡片加上自動算出的強項與待補軸標籤（4 分以上為強項、2 分以下為待補）');
+    if (state.axisVal && (state.variant === 'fusion' || state.variant === 'duo')) parts.push('在放射圖各軸頂點旁標出實際分數');
+    if (state.cols !== DEFAULTS.cols) parts.push('卡片改為每列 ' + state.cols + ' 張');
+    if (state.size !== DEFAULTS.size) parts.push('圖表大小調整為現行的 ' + state.size + '%');
+    document.getElementById('promptOut').textContent =
+      '請修改 bccs-rd-dashboard 的 index.html「綜合項目評分」分頁中每人的綜合能力卡：' + parts.join('；') + '。其餘配色、卡片排序與互動行為維持不變。';
+  }
+
+  function updateAll() { renderPreview(); updatePrompt(); }
+
+  document.querySelectorAll('.variant').forEach(function (el) {
+    el.addEventListener('click', function () { state.variant = el.dataset.v; updateAll(); });
+  });
+  document.querySelectorAll('.toggle').forEach(function (el) {
+    el.addEventListener('click', function () { state[el.dataset.t] = !state[el.dataset.t]; updateAll(); });
+  });
+  document.getElementById('noteMode').addEventListener('change', function (e) { state.noteMode = e.target.value; updateAll(); });
+  document.getElementById('chartSize').addEventListener('input', function (e) { state.size = +e.target.value; updateAll(); });
+  document.querySelectorAll('#colsSeg button').forEach(function (el) {
+    el.addEventListener('click', function () { state.cols = +el.dataset.c; updateAll(); });
+  });
+
+  var pick = document.getElementById('peoplePick');
+  PEOPLE.forEach(function (p) {
+    var b = document.createElement('button');
+    b.dataset.id = p.id;
+    b.textContent = p.name;
+    b.addEventListener('click', function () {
+      var i = state.picked.indexOf(p.id);
+      if (i === -1) state.picked.push(p.id); else if (state.picked.length > 1) state.picked.splice(i, 1);
+      updateAll();
+    });
+    pick.appendChild(b);
+  });
+
+  var PRESETS = {
+    exec: { variant: 'compact', noteMode: 'none', meters: true, track: true, tend: true, sw: true, axisVal: false, cols: 3, size: 100 },
+    full: { variant: 'fusion', noteMode: 'full', meters: true, track: true, tend: true, sw: true, axisVal: false, cols: 2, size: 115 },
+    chart: { variant: 'duo', noteMode: 'short', meters: false, track: true, tend: true, sw: false, axisVal: true, cols: 2, size: 110 },
+    data: { variant: 'bars', noteMode: 'short', meters: false, track: true, tend: true, sw: true, axisVal: false, cols: 3, size: 100 }
+  };
+  document.querySelectorAll('[data-preset]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var ps = PRESETS[el.dataset.preset];
+      Object.keys(ps).forEach(function (k) { state[k] = ps[k]; });
+      updateAll();
+    });
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', function () {
+    var btn = this;
+    navigator.clipboard.writeText(document.getElementById('promptOut').textContent).then(function () {
+      btn.textContent = '已複製';
+      btn.classList.add('ok');
+      setTimeout(function () { btn.textContent = '複製指令'; btn.classList.remove('ok'); }, 1400);
+    });
+  });
+
+  updateAll();
+})();
+</script>
+</body>
+</html>
