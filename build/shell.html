@@ -175,11 +175,33 @@ h2{border-left:4px solid var(--c-teal);padding-left:10px;font-size:15px;font-wei
     <div id="canvas-area">
       <h2>架構圖</h2>
       <div id="diagram-canvas"></div>
-      <div id="diagram-legend">
-        <div class="legend-item"><div class="legend-dot status-active"></div>現行 (Active)</div>
-        <div class="legend-item"><div class="legend-dot status-transforming"></div>轉型中 (Transforming)</div>
-        <div class="legend-item"><div class="legend-dot status-stalled"></div>停擺 (Stalled)</div>
-        <div class="legend-item"><div class="legend-dot status-missing"></div>缺位 (Missing)</div>
+      <div id="diagram-legend" style="display:flex;flex-direction:column;gap:8px;padding:12px 14px">
+        <div style="display:flex;gap:20px;flex-wrap:wrap">
+          <div class="legend-item">
+            <svg width="28" height="14" style="flex-shrink:0"><line x1="2" y1="7" x2="26" y2="7" stroke="hsl(178,42%,40%)" stroke-width="1.8"/></svg>
+            <span>現行介接</span>
+          </div>
+          <div class="legend-item">
+            <svg width="28" height="14" style="flex-shrink:0"><line x1="2" y1="7" x2="26" y2="7" stroke="hsl(35,52%,48%)" stroke-width="1.8" stroke-dasharray="6,4"/></svg>
+            <span>應介接、尚未做（重複開發風險）</span>
+          </div>
+          <div class="legend-item">
+            <svg width="28" height="14" style="flex-shrink:0"><line x1="2" y1="7" x2="26" y2="7" stroke="hsl(8,48%,50%)" stroke-width="1.8" stroke-dasharray="3,4"/></svg>
+            <span>權威來源缺位（應由此供應）</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          <div class="legend-item"><div class="legend-dot status-active"></div>現行 (Active)</div>
+          <div class="legend-item"><div class="legend-dot status-transforming"></div>轉型中</div>
+          <div class="legend-item"><div class="legend-dot status-stalled"></div>停擺</div>
+          <div class="legend-item"><div class="legend-dot status-missing"></div>缺位</div>
+          <span style="font-size:11px;color:#8a929b;align-self:center">橙虛框＝轉型中、紅虛框＝停擺；滑鼠移到系統會亮出上下游</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;border-top:1px solid var(--line);padding-top:8px">
+          <label style="font-size:12px;color:var(--ink-2);white-space:nowrap;flex-shrink:0">頂部轉型目標</label>
+          <input type="text" id="tg-title" placeholder="標題（留空不顯示 banner）" style="flex:1;border:1px solid var(--line);border-radius:4px;padding:4px 8px;background:var(--bg);font-size:13px">
+          <input type="text" id="tg-sub" placeholder="副標" style="flex:1;border:1px solid var(--line);border-radius:4px;padding:4px 8px;background:var(--bg);font-size:13px">
+        </div>
       </div>
     </div>
   </div>
@@ -462,15 +484,27 @@ function escXML(s) {
 
 var SAMPLE_STATE = {
   systems: [
-    { id:'sys-1', name:'API 閘道', owner:'基礎架構組', layer:'system', status:'active', dependsOn:[] },
-    { id:'sys-2', name:'知識庫平台', owner:'產品研發組', layer:'app', status:'transforming', dependsOn:['sys-1'] },
-    { id:'sys-3', name:'報表引擎', owner:'數據分析組', layer:'output', status:'active', dependsOn:['sys-1','sys-4'] },
-    { id:'sys-4', name:'資料倉儲', owner:'基礎架構組', layer:'infra', status:'active', dependsOn:[] },
-    { id:'sys-5', name:'專案管理系統', owner:'PMO 辦公室', layer:'app', status:'stalled', dependsOn:['sys-1'] },
-    { id:'sys-6', name:'監控中心', owner:'維運組', layer:'infra', status:'active', dependsOn:['sys-4'] },
-    { id:'sys-7', name:'官網 CMS', owner:'行銷組', layer:'app', status:'active', dependsOn:['sys-1'] },
-    { id:'sys-8', name:'統一認證服務', owner:'資安組', layer:'system', status:'missing', dependsOn:[] }
+    { id:'sys-1', name:'官網 CMS', owner:'行銷組', layer:'app', status:'active',
+      dependsOn:[{ to:'sys-3', type:'active' }, { to:'sys-8', type:'planned' }] },
+    { id:'sys-2', name:'知識庫平台', owner:'產品研發組', layer:'app', status:'transforming',
+      dependsOn:[{ to:'sys-3', type:'active' }, { to:'sys-8', type:'missing' }] },
+    { id:'sys-3', name:'API 閘道', owner:'基礎架構組', layer:'system', status:'active',
+      dependsOn:[{ to:'sys-4', type:'active' }, { to:'sys-6', type:'active' }] },
+    { id:'sys-4', name:'資料倉儲', owner:'基礎架構組', layer:'infra', status:'active',
+      dependsOn:[] },
+    { id:'sys-5', name:'專案管理系統', owner:'PMO 辦公室', layer:'app', status:'stalled',
+      dependsOn:[{ to:'sys-3', type:'active' }, { to:'sys-8', type:'planned' }] },
+    { id:'sys-6', name:'監控中心', owner:'維運組', layer:'infra', status:'active',
+      dependsOn:[{ to:'sys-4', type:'active' }] },
+    { id:'sys-7', name:'報表引擎', owner:'數據分析組', layer:'output', status:'active',
+      dependsOn:[{ to:'sys-3', type:'active' }, { to:'sys-4', type:'active' }] },
+    { id:'sys-8', name:'統一認證服務', owner:'資安組', layer:'system', status:'missing',
+      dependsOn:[] }
   ],
+  transformGoal: {
+    title: '統一身分入口（單一登入）— 轉型目標',
+    sub: '所有內部系統共用一組帳密，集中治理存取；橘虛線＝應串接尚未做，紅點線＝權威來源缺位'
+  },
   positioning: {
     orgName: '聯合數位服務股份有限公司',
     coreValue: '為中大型企業提供可靠的數位工作流程整合服務，以穩定性與安全性作為主要競爭優勢。',
@@ -486,7 +520,7 @@ var SAMPLE_STATE = {
   }
 };
 
-var state = { systems: [], positioning: { orgName:'', coreValue:'', primaryGoal:'', duplicationRisks:'', audience:'', authorities:[] } };
+var state = { systems: [], transformGoal: null, positioning: { orgName:'', coreValue:'', primaryGoal:'', duplicationRisks:'', audience:'', authorities:[] } };
 
 function loadState() {
   try {
@@ -500,6 +534,7 @@ function loadState() {
   if (!state.systems) state.systems = [];
   if (!state.positioning) state.positioning = {};
   if (!state.positioning.authorities) state.positioning.authorities = [];
+  if (state.transformGoal === undefined) state.transformGoal = null;
 }
 
 function saveState() {
@@ -517,6 +552,18 @@ function genId() {
   return 'sys-' + Date.now() + '-' + Math.floor(Math.random()*10000);
 }
 
+function normDepId(d) {
+  if (typeof d === 'string') return d;
+  if (d && d.to) return d.to;
+  return null;
+}
+
+function normDepType(d) {
+  if (typeof d === 'string') return 'active';
+  if (d && d.type) return d.type;
+  return 'active';
+}
+
 function renderSystemsList() {
   var list = document.getElementById('systems-list');
   if (state.systems.length === 0) {
@@ -529,9 +576,25 @@ function renderSystemsList() {
     card.className = 'system-card';
     card.dataset.id = sys.id;
 
-    var depOptions = state.systems.filter(function(s){ return s.id !== sys.id; }).map(function(s){
-      var sel = (sys.dependsOn && sys.dependsOn.indexOf(s.id) >= 0) ? ' selected' : '';
-      return '<option value="' + s.id + '"' + sel + '>' + escXML(s.name || '(未命名)') + '</option>';
+    var normalizedDeps = (sys.dependsOn || []).map(function(d){
+      return { to: normDepId(d), type: normDepType(d) };
+    }).filter(function(d){ return d.to; });
+
+    var others = state.systems.filter(function(s){ return s.id !== sys.id; });
+
+    var depRowsHtml = others.map(function(s){
+      var dep = normalizedDeps.find(function(d){ return d.to === s.id; });
+      var checked = dep ? ' checked' : '';
+      var typeVal = dep ? dep.type : 'active';
+      var typeOpts = ['active','planned','missing'].map(function(t){
+        var label = t === 'active' ? '現行' : t === 'planned' ? '應介接' : '缺位';
+        return '<option value="' + t + '"' + (typeVal === t ? ' selected' : '') + '>' + label + '</option>';
+      }).join('');
+      return '<div class="dep-row" data-dep-id="' + s.id + '" style="display:flex;align-items:center;gap:4px;margin-bottom:2px">'
+        + '<input type="checkbox" class="dep-check"' + checked + ' style="flex-shrink:0">'
+        + '<span style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escXML(s.name || '(未命名)') + '</span>'
+        + '<select class="dep-type" style="font-size:11px;padding:1px 2px;border:1px solid #e3e6ea;border-radius:3px;background:#f6f7f8;color:#5a626b;width:60px">' + typeOpts + '</select>'
+        + '</div>';
     }).join('');
 
     card.innerHTML = '<div class="system-card-header">'
@@ -551,11 +614,24 @@ function renderSystemsList() {
       + '<option value="stalled"' + (sys.status==='stalled'?' selected':'') + '>停擺 (Stalled)</option>'
       + '<option value="missing"' + (sys.status==='missing'?' selected':'') + '>缺位 (Missing)</option>'
       + '</select></div>'
-      + '<div><div class="field-label">上下游依賴（多選）</div><select class="field-deps" multiple>'
-      + depOptions
-      + '</select></div></div>';
+      + '<div><div class="field-label">上下游依賴</div><div class="dep-list" style="max-height:80px;overflow-y:auto;border:1px solid #e3e6ea;border-radius:4px;padding:4px 6px;background:#f6f7f8">'
+      + (others.length ? depRowsHtml : '<span style="font-size:11px;color:#8a929b">無其他系統</span>')
+      + '</div></div></div>';
 
     list.appendChild(card);
+
+    function readDeps() {
+      var result = [];
+      var rows = card.querySelectorAll('.dep-row');
+      rows.forEach(function(row) {
+        var chk = row.querySelector('.dep-check');
+        var sel = row.querySelector('.dep-type');
+        if (chk && chk.checked) {
+          result.push({ to: row.dataset.depId, type: sel ? sel.value : 'active' });
+        }
+      });
+      return result;
+    }
 
     card.querySelector('.field-name').addEventListener('input', function(e){
       sys.name = e.target.value;
@@ -577,16 +653,23 @@ function renderSystemsList() {
       saveState();
       refreshDiagram();
     });
-    card.querySelector('.field-deps').addEventListener('change', function(e){
-      var sel = e.target.selectedOptions;
-      sys.dependsOn = Array.from(sel).map(function(o){ return o.value; });
-      saveState();
-      refreshDiagram();
+
+    card.querySelectorAll('.dep-check,.dep-type').forEach(function(el){
+      el.addEventListener('change', function(){
+        sys.dependsOn = readDeps();
+        saveState();
+        refreshDiagram();
+      });
     });
+
     card.querySelector('.btn-delete-sys').addEventListener('click', function(){
       state.systems = state.systems.filter(function(s){ return s.id !== sys.id; });
       state.systems.forEach(function(s){
-        if (s.dependsOn) s.dependsOn = s.dependsOn.filter(function(d){ return d !== sys.id; });
+        if (s.dependsOn) {
+          s.dependsOn = s.dependsOn.filter(function(d){
+            return normDepId(d) !== sys.id;
+          });
+        }
       });
       saveState();
       renderSystemsList();
@@ -604,7 +687,7 @@ function refreshDiagram() {
     return;
   }
   var layout = window.ArchitectCanvasLayout.layoutSystems(state.systems, {});
-  var svgStr = window.ArchitectCanvasLayout.renderLayoutToSVG(layout, {});
+  var svgStr = window.ArchitectCanvasLayout.renderLayoutToSVG(layout, {}, { transformGoal: state.transformGoal || null });
   canvas.innerHTML = svgStr;
   bindDiagramEvents(canvas, layout);
 }
@@ -613,43 +696,42 @@ function bindDiagramEvents(canvas, layout) {
   var svg = canvas.querySelector('svg');
   if (!svg) return;
 
-  var edgeMap = {};
-  layout.edges.forEach(function(e){
-    if (!edgeMap[e.from]) edgeMap[e.from] = [];
-    if (!edgeMap[e.to]) edgeMap[e.to] = [];
-    edgeMap[e.from].push(e.to);
-    edgeMap[e.to].push(e.from);
-  });
-
   var nodes = svg.querySelectorAll('.node');
   var edges = svg.querySelectorAll('.edge');
 
   nodes.forEach(function(node) {
     node.addEventListener('mouseenter', function() {
       var nid = node.dataset.node;
-      var related = edgeMap[nid] || [];
+      var relatedNodes = {};
+      relatedNodes[nid] = true;
+
       edges.forEach(function(edge) {
-        var from = edge.dataset.from;
-        var to = edge.dataset.to;
+        var from = edge.dataset.edgeFrom;
+        var to = edge.dataset.edgeTo;
         if (from === nid || to === nid) {
-          edge.style.stroke = 'hsl(178,42%,34%)';
           edge.style.opacity = '1';
-          edge.style.strokeWidth = '2';
+          edge.style.strokeWidth = '2.5';
+          relatedNodes[from] = true;
+          relatedNodes[to] = true;
         } else {
-          edge.style.opacity = '0.15';
+          edge.style.opacity = '0.12';
+          edge.style.strokeWidth = '1.5';
         }
       });
+
       nodes.forEach(function(n) {
         var nid2 = n.dataset.node;
-        if (nid2 !== nid && related.indexOf(nid2) < 0) {
+        if (!relatedNodes[nid2]) {
           n.style.opacity = '0.35';
+        } else {
+          n.style.opacity = '1';
         }
       });
     });
+
     node.addEventListener('mouseleave', function() {
       edges.forEach(function(edge) {
-        edge.style.stroke = '';
-        edge.style.opacity = '0.7';
+        edge.style.opacity = '0.6';
         edge.style.strokeWidth = '1.5';
       });
       nodes.forEach(function(n) {
@@ -791,16 +873,18 @@ function bindToolbarEvents() {
     renderSystemsList();
     refreshDiagram();
     renderPositioningForm();
+    syncTransformGoalInputs();
     showToast('已載入範例公司資料');
   });
 
   document.getElementById('btn-clear').addEventListener('click', function(){
     if (!confirm('確定要清空所有資料並重設為空白狀態嗎？')) return;
-    state = { systems: [], positioning: { orgName:'', coreValue:'', primaryGoal:'', duplicationRisks:'', audience:'', authorities:[] } };
+    state = { systems: [], transformGoal: null, positioning: { orgName:'', coreValue:'', primaryGoal:'', duplicationRisks:'', audience:'', authorities:[] } };
     saveState();
     renderSystemsList();
     refreshDiagram();
     renderPositioningForm();
+    syncTransformGoalInputs();
     document.getElementById('positioning-output').classList.remove('visible');
     showToast('已清空，可開始輸入您的資料');
   });
@@ -826,10 +910,12 @@ function bindToolbarEvents() {
         if (!state.systems) state.systems = [];
         if (!state.positioning) state.positioning = {};
         if (!state.positioning.authorities) state.positioning.authorities = [];
+        if (state.transformGoal === undefined) state.transformGoal = null;
         saveState();
         renderSystemsList();
         refreshDiagram();
         renderPositioningForm();
+        syncTransformGoalInputs();
         document.getElementById('positioning-output').classList.remove('visible');
         showToast('匯入成功');
       } catch(err) {
@@ -892,6 +978,24 @@ function bindNavEvents() {
   });
 }
 
+function syncTransformGoalInputs() {
+  var tg = state.transformGoal || {};
+  document.getElementById('tg-title').value = tg.title || '';
+  document.getElementById('tg-sub').value = tg.sub || '';
+}
+
+function bindTransformGoalEvents() {
+  function update() {
+    var title = document.getElementById('tg-title').value.trim();
+    var sub = document.getElementById('tg-sub').value.trim();
+    state.transformGoal = title ? { title: title, sub: sub } : null;
+    saveState();
+    refreshDiagram();
+  }
+  document.getElementById('tg-title').addEventListener('input', update);
+  document.getElementById('tg-sub').addEventListener('input', update);
+}
+
 document.getElementById('btn-add-system').addEventListener('click', function(){
   state.systems.push({ id: genId(), name:'', owner:'', layer:'app', status:'active', dependsOn:[] });
   saveState();
@@ -903,9 +1007,11 @@ loadState();
 bindNavEvents();
 bindToolbarEvents();
 bindPositioningFormEvents();
+bindTransformGoalEvents();
 renderSystemsList();
 refreshDiagram();
 renderPositioningForm();
+syncTransformGoalInputs();
 </script>
 </body>
 </html>

@@ -146,9 +146,9 @@ function buildObfuscateOptions(fullProtection) {
     splitStrings: true,
     splitStringsChunkLength: 8,
     identifierNamesGenerator: 'hexadecimal',
-    selfDefending: fullProtection,
-    debugProtection: fullProtection,
-    debugProtectionInterval: fullProtection ? 2000 : 0,
+    selfDefending: false,
+    debugProtection: false,
+    debugProtectionInterval: 0,
     disableConsoleOutput: true,
     transformObjectKeys: false,
     reservedNames: RESERVED_NAMES,
@@ -171,7 +171,7 @@ function main() {
   const srcSize = fs.statSync(SRC_HTML).size;
   console.log('[harden] Source: ' + SRC_HTML + ' (' + srcSize + ' bytes)');
   console.log('[harden] Licensee: ' + LICENSEE_ARG);
-  console.log('[harden] Mode: ' + (VERIFY_MODE ? 'verify (no selfDefending/debugProtection)' : 'production (full protection)'));
+  console.log('[harden] Mode: ' + (VERIFY_MODE ? 'verify' : 'production') + ' (selfDefending/debugProtection disabled)');
 
   let html = fs.readFileSync(SRC_HTML, 'utf8');
   html = injectLicensee(html, LICENSEE_ARG);
