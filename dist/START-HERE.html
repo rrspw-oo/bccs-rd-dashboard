@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Architect Canvas — 開始使用</title>
+<style>
+  :root {
+    --c-teal: hsl(178,42%,34%); --c-amber: hsl(35,52%,44%);
+    --ink:#2b3036; --ink-2:#5a626b; --ink-3:#8a929b; --line:#e3e6ea; --bg:#f6f7f8; --card:#fff;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif; background:var(--bg); color:var(--ink); font-size:15px; line-height:1.8; }
+  .wrap { max-width:760px; margin:0 auto; padding:48px 28px 96px; }
+  header { border-bottom:3px solid var(--c-teal); padding-bottom:18px; }
+  header h1 { font-size:26px; letter-spacing:1px; }
+  header .sub { color:var(--ink-2); margin-top:8px; font-size:14px; }
+  h2 { font-size:18px; margin:36px 0 8px; padding-left:12px; border-left:4px solid var(--c-teal); letter-spacing:1px; }
+  ol { margin:8px 0 0 22px; }
+  ol li { margin-bottom:10px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:20px 24px; margin-top:14px; }
+  .open-btn { display:inline-block; margin-top:10px; padding:12px 22px; background:var(--c-teal); color:#fff; text-decoration:none; border-radius:8px; font-weight:600; letter-spacing:0.5px; }
+  .open-btn:hover { filter:brightness(1.08); }
+  code { background:#eef0f2; padding:1px 7px; border-radius:4px; font-size:13.5px; }
+  .note { color:var(--ink-3); font-size:13px; margin-top:8px; }
+  .kbd { color:var(--c-amber); font-weight:600; }
+  footer { margin-top:48px; color:var(--ink-3); font-size:12.5px; border-top:1px solid var(--line); padding-top:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Architect Canvas</h1>
+    <div class="sub">架構師的系統地圖與定位提案工作台。離線運作，買斷，不必訂閱 AI。</div>
+  </header>
+
+  <h2>三十秒上手</h2>
+  <div class="card">
+    <ol>
+      <li><span class="kbd">雙擊</span> <code>architect-canvas.html</code> — 用你的瀏覽器開啟，無需安裝、無需連網。</li>
+      <li>開啟後預設載入一間虛構的「範例公司」，你會直接看到一張系統架構圖與一段軟體定位論述，先感受它能產出什麼。</li>
+      <li>準備好換成自己的內容時，點右上角 <span class="kbd">清空成我的公司</span>，開始填入你的系統。</li>
+      <li>填完隨時點 <span class="kbd">匯出 JSON</span> 備份，或 <span class="kbd">匯出架構圖</span> 貼進你的提案。</li>
+    </ol>
+    <a class="open-btn" href="architect-canvas.html">開啟 Architect Canvas</a>
+    <div class="note">若連結沒反應，請直接在檔案總管／Finder 裡雙擊 architect-canvas.html。</div>
+  </div>
+
+  <h2>兩個分頁</h2>
+  <div class="card">
+    <ol>
+      <li><strong>系統架構圖</strong>：填入每套系統的名稱、負責人、所屬層級、上下游依賴與狀態，工具自動排版成一張權威歸屬圖。滑鼠移到任一系統會亮出它的上下游。四種狀態色：現行、轉型中、停擺、缺位。</li>
+      <li><strong>軟體定位</strong>：回答幾個結構化問題，工具產出一段可直接貼進提案的定位論述，加一張「能力歸屬原則表」——新系統立案前先查這張表，已有權威來源者一律介接、不得自建。</li>
+    </ol>
+  </div>
+
+  <h2>範例資料</h2>
+  <div class="card">
+    <p><code>examples/</code> 資料夾內附範例 JSON，可在工具裡用 <span class="kbd">匯入 JSON</span> 載入，作為自己架構的起點。</p>
+  </div>
+
+  <h2>你的資料在哪裡</h2>
+  <div class="card">
+    <p>所有資料只存在你這台電腦的瀏覽器裡（localStorage），不會上傳到任何伺服器。換電腦或備份時，用 <span class="kbd">匯出 JSON</span> 帶走，再用 <span class="kbd">匯入 JSON</span> 還原。</p>
+  </div>
+
+  <footer>
+    Architect Canvas — single seat license. 本工具持續更新，購買後一年內可免費取得新版型與新功能。
+  </footer>
+</div>
+</body>
+</html>

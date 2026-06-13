@@ -1,0 +1,112 @@
+{
+  "systems": [
+    {
+      "id": "sys-1",
+      "name": "API 閘道",
+      "owner": "基礎架構組",
+      "layer": "system",
+      "status": "active",
+      "dependsOn": []
+    },
+    {
+      "id": "sys-2",
+      "name": "知識庫平台",
+      "owner": "產品研發組",
+      "layer": "app",
+      "status": "transforming",
+      "dependsOn": [
+        "sys-1"
+      ]
+    },
+    {
+      "id": "sys-3",
+      "name": "報表引擎",
+      "owner": "數據分析組",
+      "layer": "output",
+      "status": "active",
+      "dependsOn": [
+        "sys-1",
+        "sys-4"
+      ]
+    },
+    {
+      "id": "sys-4",
+      "name": "資料倉儲",
+      "owner": "基礎架構組",
+      "layer": "infra",
+      "status": "active",
+      "dependsOn": []
+    },
+    {
+      "id": "sys-5",
+      "name": "專案管理系統",
+      "owner": "PMO 辦公室",
+      "layer": "app",
+      "status": "stalled",
+      "dependsOn": [
+        "sys-1"
+      ]
+    },
+    {
+      "id": "sys-6",
+      "name": "監控中心",
+      "owner": "維運組",
+      "layer": "infra",
+      "status": "active",
+      "dependsOn": [
+        "sys-4"
+      ]
+    },
+    {
+      "id": "sys-7",
+      "name": "官網 CMS",
+      "owner": "行銷組",
+      "layer": "app",
+      "status": "active",
+      "dependsOn": [
+        "sys-1"
+      ]
+    },
+    {
+      "id": "sys-8",
+      "name": "統一認證服務",
+      "owner": "資安組",
+      "layer": "system",
+      "status": "missing",
+      "dependsOn": []
+    }
+  ],
+  "positioning": {
+    "orgName": "聯合數位服務股份有限公司",
+    "coreValue": "為中大型企業提供可靠的數位工作流程整合服務，以穩定性與安全性作為主要競爭優勢。",
+    "primaryGoal": "整合",
+    "duplicationRisks": "各前台系統各自實作登入驗證邏輯，安全標準不一；報表產製有兩條並行路徑導致數字口徑不一致。",
+    "audience": "高階主管",
+    "authorities": [
+      {
+        "capability": "身份驗證",
+        "authority": "統一認證服務",
+        "consumers": "API 閘道、知識庫平台、官網 CMS",
+        "gap": "統一認證服務尚未上線，各系統自建"
+      },
+      {
+        "capability": "資料查詢出口",
+        "authority": "API 閘道",
+        "consumers": "所有前台系統",
+        "gap": "報表引擎直接讀取資料倉儲，未走閘道"
+      },
+      {
+        "capability": "通知與推播",
+        "authority": "尚未指定",
+        "consumers": "專案管理系統、官網 CMS",
+        "gap": "無統一訊息中台，各自串接第三方"
+      },
+      {
+        "capability": "監控告警",
+        "authority": "監控中心",
+        "consumers": "API 閘道、資料倉儲",
+        "gap": "知識庫平台、專案管理系統尚未接入"
+      }
+    ]
+  }
+}

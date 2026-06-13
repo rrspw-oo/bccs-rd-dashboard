@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architect Canvas</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--c-teal:hsl(178,42%,34%);
+--c-blue:hsl(215,42%,44%);
+--c-amber:hsl(35,52%,44%);
+--c-red:hsl(8,48%,46%);
+--c-teal-bg:hsl(178,42%,95%);
+--c-amber-bg:hsl(35,52%,94%);
+--c-red-bg:hsl(8,48%,95%);
+--ink:#2b3036;
+--ink-2:#5a626b;
+--ink-3:#8a929b;
+--line:#e3e6ea;
+--bg:#f6f7f8;
+--card:#fff;
+}
+body{font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;font-size:14px;line-height:1.7;color:var(--ink);background:var(--bg);min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--c-teal);text-decoration:none}
+button{cursor:pointer;font-family:inherit;font-size:13px}
+input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink)}
+h2{border-left:4px solid var(--c-teal);padding-left:10px;font-size:15px;font-weight:600;color:var(--ink);margin-bottom:12px}
+
+#app-header{background:var(--card);border-bottom:3px solid var(--c-teal);position:sticky;top:0;z-index:100}
+#header-inner{max-width:1180px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+#header-brand{flex:1;min-width:200px}
+#header-brand h1{font-size:18px;font-weight:700;color:var(--ink);line-height:1.2}
+#header-brand p{font-size:12px;color:var(--ink-2);margin-top:2px}
+#header-toolbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:4px;border:1px solid var(--line);background:var(--card);color:var(--ink-2);white-space:nowrap;transition:background 0.15s,color 0.15s,border-color 0.15s}
+.btn:hover{background:var(--bg);color:var(--ink);border-color:var(--ink-3)}
+.btn-primary{background:var(--c-teal);color:#fff;border-color:var(--c-teal)}
+.btn-primary:hover{background:hsl(178,42%,28%);border-color:hsl(178,42%,28%);color:#fff}
+.btn-danger{color:var(--c-red);border-color:var(--c-red)}
+.btn-danger:hover{background:var(--c-red-bg)}
+
+#main-nav{background:var(--card);border-bottom:1px solid var(--line)}
+#nav-inner{max-width:1180px;margin:0 auto;padding:0 20px;display:flex;gap:0}
+.nav-tab{padding:10px 20px;border:none;background:none;font-size:14px;color:var(--ink-2);border-bottom:3px solid transparent;margin-bottom:-1px;transition:color 0.15s,border-color 0.15s}
+.nav-tab:hover{color:var(--ink)}
+.nav-tab.active{color:var(--c-teal);border-bottom-color:var(--c-teal);font-weight:600}
+
+#main-content{flex:1;max-width:1180px;width:100%;margin:0 auto;padding:24px 20px}
+
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+#tab-diagram{display:none}
+#tab-diagram.active{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+
+#systems-editor{display:flex;flex-direction:column;gap:12px}
+#systems-list{display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 260px);overflow-y:auto;padding-right:4px}
+
+.system-card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px}
+.system-card-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.system-card-header input[type=text]{flex:1;border:1px solid var(--line);border-radius:4px;padding:4px 8px;background:var(--bg)}
+.system-card-header input[type=text]:focus{outline:none;border-color:var(--c-teal)}
+.btn-icon{width:26px;height:26px;border:1px solid var(--line);border-radius:4px;background:var(--card);color:var(--ink-3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;padding:0}
+.btn-icon:hover{background:var(--c-red-bg);color:var(--c-red);border-color:var(--c-red)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}
+.field-row.full{grid-template-columns:1fr}
+.field-label{font-size:12px;color:var(--ink-2);margin-bottom:2px}
+.field-row select,.field-row input[type=text]{width:100%;border:1px solid var(--line);border-radius:4px;padding:4px 8px;background:var(--bg)}
+.field-row select:focus,.field-row input[type=text]:focus{outline:none;border-color:var(--c-teal)}
+.dep-select{width:100%;border:1px solid var(--line);border-radius:4px;padding:4px 8px;background:var(--bg);min-height:60px}
+.dep-select:focus{outline:none;border-color:var(--c-teal)}
+
+#canvas-area{display:flex;flex-direction:column;gap:12px}
+#diagram-canvas{background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:auto;min-height:400px;position:relative}
+#diagram-canvas svg{display:block}
+#diagram-legend{display:flex;gap:16px;flex-wrap:wrap;padding:10px 14px;background:var(--card);border:1px solid var(--line);border-radius:6px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2)}
+.legend-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+
+.status-active{background:var(--c-teal);color:#fff}
+.status-transforming{background:var(--c-amber);color:#fff}
+.status-stalled{background:var(--c-red);color:#fff}
+.status-missing{background:var(--ink-3);color:#fff}
+.legend-dot.status-active{background:hsl(178,42%,34%)}
+.legend-dot.status-transforming{background:hsl(35,52%,44%)}
+.legend-dot.status-stalled{background:hsl(8,48%,46%)}
+.legend-dot.status-missing{background:hsl(0,0%,55%)}
+
+#tab-positioning{display:none}
+#tab-positioning.active{display:flex;flex-direction:column;gap:20px}
+
+.form-section{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:20px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-field{display:flex;flex-direction:column;gap:4px}
+.form-field.full{grid-column:1/-1}
+.form-field label{font-size:12px;font-weight:500;color:var(--ink-2)}
+.form-field input[type=text],.form-field select,.form-field textarea{border:1px solid var(--line);border-radius:4px;padding:6px 10px;background:var(--bg);color:var(--ink)}
+.form-field input[type=text]:focus,.form-field select:focus,.form-field textarea:focus{outline:none;border-color:var(--c-teal)}
+.form-field textarea{resize:vertical;min-height:72px}
+
+#authorities-table-editor{display:flex;flex-direction:column;gap:8px}
+#authorities-rows{display:flex;flex-direction:column;gap:6px}
+.authority-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 30px;gap:6px;align-items:center}
+.authority-row input{border:1px solid var(--line);border-radius:4px;padding:4px 8px;background:var(--bg);color:var(--ink);width:100%}
+.authority-row input:focus{outline:none;border-color:var(--c-teal)}
+.authority-row-header{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 30px;gap:6px}
+.authority-row-header span{font-size:11px;color:var(--ink-3);font-weight:500}
+
+#positioning-output{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:20px;display:none;flex-direction:column;gap:20px}
+#positioning-output.visible{display:flex}
+.output-section{display:flex;flex-direction:column;gap:8px}
+.output-section h3{font-size:13px;font-weight:600;color:var(--ink);border-bottom:1px solid var(--line);padding-bottom:6px}
+#narrative-block{position:relative}
+#narrative-text{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:12px;white-space:pre-wrap;line-height:1.8;color:var(--ink);font-size:13px;min-height:100px}
+#copy-narrative{position:absolute;top:8px;right:8px}
+.capability-table{width:100%;border-collapse:collapse;font-size:13px}
+.capability-table th{background:var(--c-teal-bg);color:var(--c-teal);padding:6px 10px;text-align:left;border:1px solid var(--line);font-weight:600}
+.capability-table td{padding:6px 10px;border:1px solid var(--line);vertical-align:top}
+.capability-table tr:nth-child(even) td{background:var(--bg)}
+.highlights-list{display:flex;flex-direction:column;gap:6px}
+.highlight-item{padding:6px 10px;background:var(--c-teal-bg);border-left:3px solid var(--c-teal);border-radius:0 4px 4px 0;font-size:13px;color:var(--ink)}
+
+#generate-btn-row{display:flex;justify-content:flex-start}
+
+#license-footer{max-width:1180px;margin:0 auto;width:100%;padding:10px 20px;font-size:11px;color:var(--ink-3);border-top:1px solid var(--line);margin-top:auto}
+
+#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:8px 16px;border-radius:4px;font-size:13px;opacity:0;transition:opacity 0.2s;pointer-events:none;z-index:9999}
+#toast.show{opacity:1}
+
+.empty-state{color:var(--ink-3);font-size:13px;text-align:center;padding:24px;background:var(--bg);border-radius:4px;border:1px dashed var(--line)}
+
+@media(max-width:780px){
+  #tab-diagram.active{grid-template-columns:1fr}
+  #systems-list{max-height:none}
+  .form-grid{grid-template-columns:1fr}
+  .authority-row{grid-template-columns:1fr 1fr;grid-template-rows:auto auto auto}
+}
+</style>
+</head>
+<body>
+
+<header id="app-header">
+  <div id="header-inner">
+    <div id="header-brand">
+      <h1>Architect Canvas</h1>
+      <p>架構師的系統地圖與定位提案工作台</p>
+    </div>
+    <div id="header-toolbar">
+      <button class="btn" id="btn-load-sample">範例公司</button>
+      <button class="btn btn-danger" id="btn-clear">清空成我的公司</button>
+      <button class="btn" id="btn-import">匯入 JSON</button>
+      <input type="file" id="import-file-input" accept=".json" style="display:none">
+      <button class="btn" id="btn-export">匯出 JSON</button>
+      <button class="btn" id="btn-export-png">匯出架構圖 PNG</button>
+      <button class="btn" id="btn-export-svg">匯出架構圖 SVG</button>
+    </div>
+  </div>
+</header>
+
+<nav id="main-nav">
+  <div id="nav-inner">
+    <button class="nav-tab active" data-tab="diagram">系統架構圖</button>
+    <button class="nav-tab" data-tab="positioning">軟體定位</button>
+  </div>
+</nav>
+
+<main id="main-content">
+  <div id="tab-diagram" class="tab-panel active">
+    <div id="systems-editor">
+      <h2>系統清單</h2>
+      <button class="btn btn-primary" id="btn-add-system">+ 新增系統</button>
+      <div id="systems-list"></div>
+    </div>
+    <div id="canvas-area">
+      <h2>架構圖</h2>
+      <div id="diagram-canvas"></div>
+      <div id="diagram-legend">
+        <div class="legend-item"><div class="legend-dot status-active"></div>現行 (Active)</div>
+        <div class="legend-item"><div class="legend-dot status-transforming"></div>轉型中 (Transforming)</div>
+        <div class="legend-item"><div class="legend-dot status-stalled"></div>停擺 (Stalled)</div>
+        <div class="legend-item"><div class="legend-dot status-missing"></div>缺位 (Missing)</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-positioning" class="tab-panel">
+    <div class="form-section">
+      <h2>定位問卷</h2>
+      <div class="form-grid">
+        <div class="form-field">
+          <label>組織名稱 (orgName)</label>
+          <input type="text" id="pos-orgName" placeholder="例：聯合數位服務有限公司">
+        </div>
+        <div class="form-field">
+          <label>主要目標 (primaryGoal)</label>
+          <select id="pos-primaryGoal">
+            <option value="">請選擇</option>
+            <option value="整合">整合</option>
+            <option value="現代化">現代化</option>
+            <option value="資安強化">資安強化</option>
+            <option value="規模化">規模化</option>
+            <option value="降本">降本</option>
+          </select>
+        </div>
+        <div class="form-field full">
+          <label>核心價值 (coreValue)</label>
+          <textarea id="pos-coreValue" placeholder="描述組織的核心業務價值與競爭優勢"></textarea>
+        </div>
+        <div class="form-field full">
+          <label>重複開發風險 (duplicationRisks)</label>
+          <textarea id="pos-duplicationRisks" placeholder="描述目前存在哪些重複建設或功能孤島的風險"></textarea>
+        </div>
+        <div class="form-field">
+          <label>提案對象 (audience)</label>
+          <select id="pos-audience">
+            <option value="">請選擇</option>
+            <option value="高階主管">高階主管</option>
+            <option value="技術團隊">技術團隊</option>
+            <option value="客戶">客戶</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <label style="font-size:12px;font-weight:500;color:var(--ink-2)">能力歸屬 (authorities)</label>
+          <button class="btn" id="btn-add-authority">+ 新增列</button>
+        </div>
+        <div id="authorities-table-editor">
+          <div class="authority-row-header">
+            <span>共用能力</span>
+            <span>權威來源</span>
+            <span>應取用系統</span>
+            <span>現況落差</span>
+            <span></span>
+          </div>
+          <div id="authorities-rows"></div>
+        </div>
+      </div>
+    </div>
+    <div id="generate-btn-row">
+      <button class="btn btn-primary" id="btn-generate" style="padding:8px 24px;font-size:14px">產生定位論述</button>
+    </div>
+    <div id="positioning-output">
+      <div class="output-section">
+        <h3>定位論述 (Narrative)</h3>
+        <div id="narrative-block">
+          <div id="narrative-text"></div>
+          <button class="btn" id="copy-narrative" style="font-size:12px;padding:3px 8px">複製</button>
+        </div>
+      </div>
+      <div class="output-section">
+        <h3>能力地圖表格 (Capability Table)</h3>
+        <div id="capability-table-container"></div>
+      </div>
+      <div class="output-section">
+        <h3>重點摘要 (Highlights)</h3>
+        <div id="highlights-container"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div id="license-footer">Licensed to {{LICENSEE}} — single seat</div>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+var STUB_LAYOUT = true;
+
+if (!window.ArchitectCanvasLayout) {
+  window.ArchitectCanvasLayout = {
+    layoutSystems: function(systems, options) {
+      var layerOrder = ['app', 'system', 'output', 'infra'];
+      var layerLabel = {app:'應用層', system:'系統層', output:'輸出層', infra:'基礎層'};
+      var groups = {};
+      layerOrder.forEach(function(l){ groups[l] = []; });
+      systems.forEach(function(s){
+        var l = s.layer || 'system';
+        if (!groups[l]) groups[l] = [];
+        groups[l].push(s);
+      });
+      var nodes = [];
+      var nodeW = 140;
+      var nodeH = 54;
+      var colGap = 24;
+      var rowGap = 56;
+      var labelH = 28;
+      var paddingX = 20;
+      var paddingY = 16;
+      var y = paddingY;
+      var totalWidth = 0;
+      layerOrder.forEach(function(layer) {
+        var items = groups[layer];
+        if (!items || items.length === 0) return;
+        var rowW = items.length * nodeW + (items.length - 1) * colGap + paddingX * 2;
+        if (rowW > totalWidth) totalWidth = rowW;
+      });
+      if (totalWidth < 600) totalWidth = 600;
+      layerOrder.forEach(function(layer) {
+        var items = groups[layer];
+        if (!items || items.length === 0) return;
+        y += labelH;
+        var totalItemsW = items.length * nodeW + (items.length - 1) * colGap;
+        var startX = (totalWidth - totalItemsW) / 2;
+        items.forEach(function(s, i) {
+          nodes.push({
+            id: s.id,
+            name: s.name,
+            owner: s.owner,
+            layer: s.layer,
+            status: s.status,
+            x: startX + i * (nodeW + colGap),
+            y: y,
+            w: nodeW,
+            h: nodeH,
+            _layerLabel: layerLabel[layer] || layer
+          });
+        });
+        y += nodeH + rowGap;
+      });
+      var edges = [];
+      systems.forEach(function(s) {
+        if (s.dependsOn && s.dependsOn.length) {
+          s.dependsOn.forEach(function(depId) {
+            edges.push({ from: s.id, to: depId });
+          });
+        }
+      });
+      return { nodes: nodes, edges: edges, width: totalWidth, height: y + paddingY };
+    },
+
+    renderLayoutToSVG: function(layoutResult, options) {
+      var nodes = layoutResult.nodes;
+      var edges = layoutResult.edges;
+      var W = layoutResult.width;
+      var H = layoutResult.height;
+
+      var statusColor = {
+        active: 'hsl(178,42%,34%)',
+        transforming: 'hsl(35,52%,44%)',
+        stalled: 'hsl(8,48%,46%)',
+        missing: 'hsl(0,0%,55%)'
+      };
+      var statusBg = {
+        active: 'hsl(178,42%,95%)',
+        transforming: 'hsl(35,52%,94%)',
+        stalled: 'hsl(8,48%,95%)',
+        missing: 'hsl(0,0%,92%)'
+      };
+
+      var nodeMap = {};
+      nodes.forEach(function(n){ nodeMap[n.id] = n; });
+
+      var edgeSVG = '';
+      edges.forEach(function(e) {
+        var from = nodeMap[e.from];
+        var to = nodeMap[e.to];
+        if (!from || !to) return;
+        var x1 = from.x + from.w / 2;
+        var y1 = from.y + from.h;
+        var x2 = to.x + to.w / 2;
+        var y2 = to.y;
+        if (y1 > y2) { y1 = from.y; y2 = to.y + to.h; }
+        var my = (y1 + y2) / 2;
+        edgeSVG += '<path class="edge" data-from="' + e.from + '" data-to="' + e.to + '" d="M' + x1 + ',' + y1 + ' C' + x1 + ',' + my + ' ' + x2 + ',' + my + ' ' + x2 + ',' + y2 + '" stroke="#c8cdd4" stroke-width="1.5" fill="none" marker-end="url(#arrow)" opacity="0.7"/>';
+      });
+
+      var layerBandSVG = '';
+      var layerOrder = ['app','system','output','infra'];
+      var layerLabel = {app:'應用層',system:'系統層',output:'輸出層',infra:'基礎層'};
+      var layerColors = {app:'hsl(215,42%,97%)',system:'hsl(178,42%,97%)',output:'hsl(35,52%,97%)',infra:'hsl(0,0%,97%)'};
+      var layerGroups = {};
+      nodes.forEach(function(n){
+        var l = n.layer || 'system';
+        if (!layerGroups[l]) layerGroups[l] = [];
+        layerGroups[l].push(n);
+      });
+      layerOrder.forEach(function(layer){
+        var group = layerGroups[layer];
+        if (!group || group.length === 0) return;
+        var minY = Infinity, maxY = -Infinity;
+        group.forEach(function(n){ if(n.y < minY) minY=n.y; if(n.y+n.h > maxY) maxY=n.y+n.h; });
+        layerBandSVG += '<rect x="0" y="' + (minY-26) + '" width="' + W + '" height="' + (maxY - minY + 40) + '" fill="' + layerColors[layer] + '" rx="4"/>';
+        layerBandSVG += '<text x="10" y="' + (minY-10) + '" font-size="11" fill="hsl(0,0%,55%)" font-family="PingFang TC,sans-serif" font-weight="500">' + (layerLabel[layer]||layer) + '</text>';
+      });
+
+      var nodeSVG = '';
+      nodes.forEach(function(n) {
+        var c = statusColor[n.status] || '#888';
+        var bg = statusBg[n.status] || '#f0f0f0';
+        var nameText = n.name.length > 9 ? n.name.substring(0,9)+'...' : n.name;
+        var ownerText = n.owner ? (n.owner.length > 10 ? n.owner.substring(0,10)+'...' : n.owner) : '';
+        nodeSVG += '<g class="node" data-node="' + n.id + '" style="cursor:pointer">';
+        nodeSVG += '<rect x="' + n.x + '" y="' + n.y + '" width="' + n.w + '" height="' + n.h + '" rx="5" fill="' + bg + '" stroke="' + c + '" stroke-width="1.5"/>';
+        nodeSVG += '<rect x="' + n.x + '" y="' + n.y + '" width="' + n.w + '" height="5" rx="5" fill="' + c + '"/>';
+        nodeSVG += '<rect x="' + n.x + '" y="' + (n.y+3) + '" width="' + n.w + '" height="2" fill="' + c + '"/>';
+        nodeSVG += '<text x="' + (n.x + n.w/2) + '" y="' + (n.y + 24) + '" text-anchor="middle" font-size="13" font-weight="600" fill="' + c + '" font-family="PingFang TC,sans-serif">' + escXML(nameText) + '</text>';
+        if (ownerText) {
+          nodeSVG += '<text x="' + (n.x + n.w/2) + '" y="' + (n.y + 40) + '" text-anchor="middle" font-size="10" fill="hsl(0,0%,50%)" font-family="PingFang TC,sans-serif">' + escXML(ownerText) + '</text>';
+        }
+        nodeSVG += '</g>';
+      });
+
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">'
+        + '<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#c8cdd4"/></marker></defs>'
+        + layerBandSVG
+        + edgeSVG
+        + nodeSVG
+        + '</svg>';
+      return svg;
+    }
+  };
+}
+
+var STUB_POSITIONING = true;
+
+if (!window.ArchitectCanvasPositioning) {
+  window.ArchitectCanvasPositioning = {
+    generatePositioning: function(answers, systems) {
+      var org = answers.orgName || '貴組織';
+      var goal = answers.primaryGoal || '整合';
+      var audience = answers.audience || '高階主管';
+      var narrative = org + ' 目前以「' + goal + '」為核心目標，推動軟體架構的系統性整合。\n\n'
+        + '根據現行系統盤點，共識別出 ' + systems.length + ' 套系統，涵蓋應用層、系統層、輸出層與基礎層。'
+        + (answers.coreValue ? '\n\n核心價值定位：' + answers.coreValue : '')
+        + (answers.duplicationRisks ? '\n\n重複開發風險：' + answers.duplicationRisks : '')
+        + '\n\n本提案針對「' + audience + '」受眾，聚焦於能力歸屬的清晰化，以降低系統間的功能重疊與技術債累積，建立可持續演進的架構基礎。';
+
+      var capabilityTable = (answers.authorities && answers.authorities.length > 0)
+        ? answers.authorities.filter(function(a){ return a.capability; }).map(function(a) {
+            return {
+              capability: a.capability || '',
+              authority: a.authority || '',
+              consumers: a.consumers || '',
+              gap: a.gap || ''
+            };
+          })
+        : [
+            { capability: '身份驗證', authority: '統一認證服務', consumers: '所有前台系統', gap: '部分系統仍自建登入邏輯' },
+            { capability: '通知推播', authority: '訊息中台', consumers: 'APP、後台管理', gap: '報表系統直送 SMTP，未走中台' },
+            { capability: '資料查詢', authority: 'API 閘道', consumers: '前台、第三方整合', gap: '有兩套查詢 API 並存' }
+          ];
+
+      var highlights = [
+        '系統總數：' + systems.length + ' 套，橫跨四個架構層',
+        '主要目標：' + goal + '，建議優先整合重複能力節點',
+        '提案受眾：' + audience + '，論述應強調治理成效與風險降低',
+        '能力歸屬表已識別 ' + capabilityTable.length + ' 項共用能力，建議逐步收斂至單一權威來源'
+      ];
+
+      return { narrative: narrative, capabilityTable: capabilityTable, highlights: highlights };
+    }
+  };
+}
+
+function escXML(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+var SAMPLE_STATE = {
+  systems: [
+    { id:'sys-1', name:'API 閘道', owner:'基礎架構組', layer:'system', status:'active', dependsOn:[] },
+    { id:'sys-2', name:'知識庫平台', owner:'產品研發組', layer:'app', status:'transforming', dependsOn:['sys-1'] },
+    { id:'sys-3', name:'報表引擎', owner:'數據分析組', layer:'output', status:'active', dependsOn:['sys-1','sys-4'] },
+    { id:'sys-4', name:'資料倉儲', owner:'基礎架構組', layer:'infra', status:'active', dependsOn:[] },
+    { id:'sys-5', name:'專案管理系統', owner:'PMO 辦公室', layer:'app', status:'stalled', dependsOn:['sys-1'] },
+    { id:'sys-6', name:'監控中心', owner:'維運組', layer:'infra', status:'active', dependsOn:['sys-4'] },
+    { id:'sys-7', name:'官網 CMS', owner:'行銷組', layer:'app', status:'active', dependsOn:['sys-1'] },
+    { id:'sys-8', name:'統一認證服務', owner:'資安組', layer:'system', status:'missing', dependsOn:[] }
+  ],
+  positioning: {
+    orgName: '聯合數位服務股份有限公司',
+    coreValue: '為中大型企業提供可靠的數位工作流程整合服務，以穩定性與安全性作為主要競爭優勢。',
+    primaryGoal: '整合',
+    duplicationRisks: '各前台系統各自實作登入驗證邏輯，安全標準不一；報表產製有兩條並行路徑導致數字口徑不一致。',
+    audience: '高階主管',
+    authorities: [
+      { capability:'身份驗證', authority:'統一認證服務', consumers:'API 閘道、知識庫平台、官網 CMS', gap:'統一認證服務尚未上線，各系統自建' },
+      { capability:'資料查詢出口', authority:'API 閘道', consumers:'所有前台系統', gap:'報表引擎直接讀取資料倉儲，未走閘道' },
+      { capability:'通知與推播', authority:'尚未指定', consumers:'專案管理系統、官網 CMS', gap:'無統一訊息中台，各自串接第三方' },
+      { capability:'監控告警', authority:'監控中心', consumers:'API 閘道、資料倉儲', gap:'知識庫平台、專案管理系統尚未接入' }
+    ]
+  }
+};
+
+var state = { systems: [], positioning: { orgName:'', coreValue:'', primaryGoal:'', duplicationRisks:'', audience:'', authorities:[] } };
+
+function loadState() {
+  try {
+    var raw = localStorage.getItem('architect-canvas-state');
+    if (raw) {
+      state = JSON.parse(raw);
+    } else {
+      state = JSON.parse(JSON.stringify(SAMPLE_STATE));
+    }
+  } catch(e) {}
+  if (!state.systems) state.systems = [];
+  if (!state.positioning) state.positioning = {};
+  if (!state.positioning.authorities) state.positioning.authorities = [];
+}
+
+function saveState() {
+  try { localStorage.setItem('architect-canvas-state', JSON.stringify(state)); } catch(e) {}
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2200);
+}
+
+function genId() {
+  return 'sys-' + Date.now() + '-' + Math.floor(Math.random()*10000);
+}
+
+function renderSystemsList() {
+  var list = document.getElementById('systems-list');
+  if (state.systems.length === 0) {
+    list.innerHTML = '<div class="empty-state">尚無系統，點擊「新增系統」開始建立</div>';
+    return;
+  }
+  list.innerHTML = '';
+  state.systems.forEach(function(sys) {
+    var card = document.createElement('div');
+    card.className = 'system-card';
+    card.dataset.id = sys.id;
+
+    var depOptions = state.systems.filter(function(s){ return s.id !== sys.id; }).map(function(s){
+      var sel = (sys.dependsOn && sys.dependsOn.indexOf(s.id) >= 0) ? ' selected' : '';
+      return '<option value="' + s.id + '"' + sel + '>' + escXML(s.name || '(未命名)') + '</option>';
+    }).join('');
+
+    card.innerHTML = '<div class="system-card-header">'
+      + '<input type="text" class="field-name" placeholder="系統名稱" value="' + escXML(sys.name||'') + '">'
+      + '<button class="btn-icon btn-delete-sys" title="刪除">x</button>'
+      + '</div>'
+      + '<div class="field-row"><div><div class="field-label">負責人</div><input type="text" class="field-owner" placeholder="負責人" value="' + escXML(sys.owner||'') + '"></div>'
+      + '<div><div class="field-label">所屬層級</div><select class="field-layer">'
+      + '<option value="app"' + (sys.layer==='app'?' selected':'') + '>應用層 (App)</option>'
+      + '<option value="system"' + (sys.layer==='system'?' selected':'') + '>系統層 (System)</option>'
+      + '<option value="output"' + (sys.layer==='output'?' selected':'') + '>輸出層 (Output)</option>'
+      + '<option value="infra"' + (sys.layer==='infra'?' selected':'') + '>基礎層 (Infra)</option>'
+      + '</select></div></div>'
+      + '<div class="field-row"><div><div class="field-label">狀態</div><select class="field-status">'
+      + '<option value="active"' + (sys.status==='active'?' selected':'') + '>現行 (Active)</option>'
+      + '<option value="transforming"' + (sys.status==='transforming'?' selected':'') + '>轉型中 (Transforming)</option>'
+      + '<option value="stalled"' + (sys.status==='stalled'?' selected':'') + '>停擺 (Stalled)</option>'
+      + '<option value="missing"' + (sys.status==='missing'?' selected':'') + '>缺位 (Missing)</option>'
+      + '</select></div>'
+      + '<div><div class="field-label">上下游依賴（多選）</div><select class="field-deps" multiple>'
+      + depOptions
+      + '</select></div></div>';
+
+    list.appendChild(card);
+
+    card.querySelector('.field-name').addEventListener('input', function(e){
+      sys.name = e.target.value;
+      saveState();
+      refreshDiagram();
+    });
+    card.querySelector('.field-owner').addEventListener('input', function(e){
+      sys.owner = e.target.value;
+      saveState();
+      refreshDiagram();
+    });
+    card.querySelector('.field-layer').addEventListener('change', function(e){
+      sys.layer = e.target.value;
+      saveState();
+      refreshDiagram();
+    });
+    card.querySelector('.field-status').addEventListener('change', function(e){
+      sys.status = e.target.value;
+      saveState();
+      refreshDiagram();
+    });
+    card.querySelector('.field-deps').addEventListener('change', function(e){
+      var sel = e.target.selectedOptions;
+      sys.dependsOn = Array.from(sel).map(function(o){ return o.value; });
+      saveState();
+      refreshDiagram();
+    });
+    card.querySelector('.btn-delete-sys').addEventListener('click', function(){
+      state.systems = state.systems.filter(function(s){ return s.id !== sys.id; });
+      state.systems.forEach(function(s){
+        if (s.dependsOn) s.dependsOn = s.dependsOn.filter(function(d){ return d !== sys.id; });
+      });
+      saveState();
+      renderSystemsList();
+      refreshDiagram();
+    });
+  });
+}
+
+var highlightedNodeId = null;
+
+function refreshDiagram() {
+  var canvas = document.getElementById('diagram-canvas');
+  if (state.systems.length === 0) {
+    canvas.innerHTML = '<div class="empty-state" style="margin:24px">尚無系統資料，請在左側新增系統</div>';
+    return;
+  }
+  var layout = window.ArchitectCanvasLayout.layoutSystems(state.systems, {});
+  var svgStr = window.ArchitectCanvasLayout.renderLayoutToSVG(layout, {});
+  canvas.innerHTML = svgStr;
+  bindDiagramEvents(canvas, layout);
+}
+
+function bindDiagramEvents(canvas, layout) {
+  var svg = canvas.querySelector('svg');
+  if (!svg) return;
+
+  var edgeMap = {};
+  layout.edges.forEach(function(e){
+    if (!edgeMap[e.from]) edgeMap[e.from] = [];
+    if (!edgeMap[e.to]) edgeMap[e.to] = [];
+    edgeMap[e.from].push(e.to);
+    edgeMap[e.to].push(e.from);
+  });
+
+  var nodes = svg.querySelectorAll('.node');
+  var edges = svg.querySelectorAll('.edge');
+
+  nodes.forEach(function(node) {
+    node.addEventListener('mouseenter', function() {
+      var nid = node.dataset.node;
+      var related = edgeMap[nid] || [];
+      edges.forEach(function(edge) {
+        var from = edge.dataset.from;
+        var to = edge.dataset.to;
+        if (from === nid || to === nid) {
+          edge.style.stroke = 'hsl(178,42%,34%)';
+          edge.style.opacity = '1';
+          edge.style.strokeWidth = '2';
+        } else {
+          edge.style.opacity = '0.15';
+        }
+      });
+      nodes.forEach(function(n) {
+        var nid2 = n.dataset.node;
+        if (nid2 !== nid && related.indexOf(nid2) < 0) {
+          n.style.opacity = '0.35';
+        }
+      });
+    });
+    node.addEventListener('mouseleave', function() {
+      edges.forEach(function(edge) {
+        edge.style.stroke = '';
+        edge.style.opacity = '0.7';
+        edge.style.strokeWidth = '1.5';
+      });
+      nodes.forEach(function(n) {
+        n.style.opacity = '1';
+      });
+    });
+  });
+}
+
+function renderPositioningForm() {
+  var p = state.positioning;
+  document.getElementById('pos-orgName').value = p.orgName || '';
+  document.getElementById('pos-coreValue').value = p.coreValue || '';
+  document.getElementById('pos-primaryGoal').value = p.primaryGoal || '';
+  document.getElementById('pos-duplicationRisks').value = p.duplicationRisks || '';
+  document.getElementById('pos-audience').value = p.audience || '';
+  renderAuthoritiesRows();
+}
+
+function renderAuthoritiesRows() {
+  var rows = document.getElementById('authorities-rows');
+  var authorities = state.positioning.authorities || [];
+  if (authorities.length === 0) {
+    rows.innerHTML = '<div class="empty-state" style="padding:10px">尚無資料，點擊「新增列」</div>';
+    return;
+  }
+  rows.innerHTML = '';
+  authorities.forEach(function(a, i) {
+    var row = document.createElement('div');
+    row.className = 'authority-row';
+    row.innerHTML = '<input type="text" class="a-capability" placeholder="共用能力" value="' + escXML(a.capability||'') + '">'
+      + '<input type="text" class="a-authority" placeholder="權威來源" value="' + escXML(a.authority||'') + '">'
+      + '<input type="text" class="a-consumers" placeholder="應取用系統" value="' + escXML(a.consumers||'') + '">'
+      + '<input type="text" class="a-gap" placeholder="現況落差" value="' + escXML(a.gap||'') + '">'
+      + '<button class="btn-icon btn-del-auth" style="flex-shrink:0" title="刪除">x</button>';
+    rows.appendChild(row);
+    row.querySelector('.a-capability').addEventListener('input', function(e){ a.capability = e.target.value; saveState(); });
+    row.querySelector('.a-authority').addEventListener('input', function(e){ a.authority = e.target.value; saveState(); });
+    row.querySelector('.a-consumers').addEventListener('input', function(e){ a.consumers = e.target.value; saveState(); });
+    row.querySelector('.a-gap').addEventListener('input', function(e){ a.gap = e.target.value; saveState(); });
+    row.querySelector('.btn-del-auth').addEventListener('click', function(){
+      state.positioning.authorities.splice(i, 1);
+      saveState();
+      renderAuthoritiesRows();
+    });
+  });
+}
+
+function bindPositioningFormEvents() {
+  ['pos-orgName','pos-coreValue','pos-primaryGoal','pos-duplicationRisks','pos-audience'].forEach(function(id) {
+    var key = id.replace('pos-','');
+    document.getElementById(id).addEventListener('input', function(e){
+      state.positioning[key] = e.target.value;
+      saveState();
+    });
+    document.getElementById(id).addEventListener('change', function(e){
+      state.positioning[key] = e.target.value;
+      saveState();
+    });
+  });
+
+  document.getElementById('btn-add-authority').addEventListener('click', function(){
+    if (!state.positioning.authorities) state.positioning.authorities = [];
+    state.positioning.authorities.push({ capability:'', authority:'', consumers:'', gap:'' });
+    saveState();
+    renderAuthoritiesRows();
+  });
+
+  document.getElementById('btn-generate').addEventListener('click', function(){
+    var result = window.ArchitectCanvasPositioning.generatePositioning(state.positioning, state.systems);
+    var output = document.getElementById('positioning-output');
+    output.classList.add('visible');
+
+    document.getElementById('narrative-text').textContent = result.narrative || '';
+
+    var tableContainer = document.getElementById('capability-table-container');
+    if (result.capabilityTable && result.capabilityTable.length > 0) {
+      var html = '<table class="capability-table"><thead><tr><th>共用能力</th><th>權威來源</th><th>應取用系統</th><th>現況落差</th></tr></thead><tbody>';
+      result.capabilityTable.forEach(function(row){
+        html += '<tr><td>' + escXML(row.capability||'') + '</td><td>' + escXML(row.authority||'') + '</td><td>' + escXML(row.consumers||'') + '</td><td>' + escXML(row.gap||'') + '</td></tr>';
+      });
+      html += '</tbody></table>';
+      tableContainer.innerHTML = html;
+    } else {
+      tableContainer.innerHTML = '<div class="empty-state">無能力表格資料</div>';
+    }
+
+    var hlContainer = document.getElementById('highlights-container');
+    if (result.highlights && result.highlights.length > 0) {
+      var hlHtml = '<div class="highlights-list">';
+      result.highlights.forEach(function(h){
+        hlHtml += '<div class="highlight-item">' + escXML(h) + '</div>';
+      });
+      hlHtml += '</div>';
+      hlContainer.innerHTML = hlHtml;
+    } else {
+      hlContainer.innerHTML = '<div class="empty-state">無重點摘要</div>';
+    }
+
+    output.scrollIntoView({ behavior:'smooth', block:'start' });
+  });
+
+  document.getElementById('copy-narrative').addEventListener('click', function(){
+    var text = document.getElementById('narrative-text').textContent;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function(){ showToast('已複製到剪貼簿'); });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('已複製到剪貼簿');
+    }
+  });
+}
+
+function downloadFile(filename, content, type) {
+  var blob = new Blob([content], { type: type });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function getSVGString() {
+  var svg = document.querySelector('#diagram-canvas svg');
+  if (!svg) return null;
+  return new XMLSerializer().serializeToString(svg);
+}
+
+function bindToolbarEvents() {
+  document.getElementById('btn-load-sample').addEventListener('click', function(){
+    state = JSON.parse(JSON.stringify(SAMPLE_STATE));
+    saveState();
+    renderSystemsList();
+    refreshDiagram();
+    renderPositioningForm();
+    showToast('已載入範例公司資料');
+  });
+
+  document.getElementById('btn-clear').addEventListener('click', function(){
+    if (!confirm('確定要清空所有資料並重設為空白狀態嗎？')) return;
+    state = { systems: [], positioning: { orgName:'', coreValue:'', primaryGoal:'', duplicationRisks:'', audience:'', authorities:[] } };
+    saveState();
+    renderSystemsList();
+    refreshDiagram();
+    renderPositioningForm();
+    document.getElementById('positioning-output').classList.remove('visible');
+    showToast('已清空，可開始輸入您的資料');
+  });
+
+  document.getElementById('btn-export').addEventListener('click', function(){
+    var json = JSON.stringify(state, null, 2);
+    downloadFile('architect-canvas-export.json', json, 'application/json');
+    showToast('已匯出 JSON');
+  });
+
+  document.getElementById('btn-import').addEventListener('click', function(){
+    document.getElementById('import-file-input').click();
+  });
+
+  document.getElementById('import-file-input').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      try {
+        var imported = JSON.parse(ev.target.result);
+        state = imported;
+        if (!state.systems) state.systems = [];
+        if (!state.positioning) state.positioning = {};
+        if (!state.positioning.authorities) state.positioning.authorities = [];
+        saveState();
+        renderSystemsList();
+        refreshDiagram();
+        renderPositioningForm();
+        document.getElementById('positioning-output').classList.remove('visible');
+        showToast('匯入成功');
+      } catch(err) {
+        alert('JSON 格式錯誤，無法匯入');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  document.getElementById('btn-export-svg').addEventListener('click', function(){
+    var svgStr = getSVGString();
+    if (!svgStr) { alert('目前無架構圖可匯出'); return; }
+    downloadFile('architect-canvas-diagram.svg', svgStr, 'image/svg+xml');
+    showToast('已匯出 SVG');
+  });
+
+  document.getElementById('btn-export-png').addEventListener('click', function(){
+    var svg = document.querySelector('#diagram-canvas svg');
+    if (!svg) { alert('目前無架構圖可匯出'); return; }
+    var svgStr = new XMLSerializer().serializeToString(svg);
+    var w = parseInt(svg.getAttribute('width')) || 800;
+    var h = parseInt(svg.getAttribute('height')) || 600;
+    var canvas = document.createElement('canvas');
+    canvas.width = w * 2;
+    canvas.height = h * 2;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(2, 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+    var img = new Image();
+    var blob = new Blob([svgStr], { type:'image/svg+xml' });
+    var url = URL.createObjectURL(blob);
+    img.onload = function(){
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(function(pngBlob){
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(pngBlob);
+        a.download = 'architect-canvas-diagram.png';
+        a.click();
+        showToast('已匯出 PNG');
+      }, 'image/png');
+    };
+    img.src = url;
+  });
+}
+
+function bindNavEvents() {
+  var tabs = document.querySelectorAll('.nav-tab');
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      tabs.forEach(function(t){ t.classList.remove('active'); });
+      tab.classList.add('active');
+      var target = tab.dataset.tab;
+      document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+      document.getElementById('tab-' + target).classList.add('active');
+      if (target === 'diagram') { refreshDiagram(); }
+    });
+  });
+}
+
+document.getElementById('btn-add-system').addEventListener('click', function(){
+  state.systems.push({ id: genId(), name:'', owner:'', layer:'app', status:'active', dependsOn:[] });
+  saveState();
+  renderSystemsList();
+  refreshDiagram();
+});
+
+loadState();
+bindNavEvents();
+bindToolbarEvents();
+bindPositioningFormEvents();
+renderSystemsList();
+refreshDiagram();
+renderPositioningForm();
+</script>
+</body>
+</html>

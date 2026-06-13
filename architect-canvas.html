@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architect Canvas</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--c-teal:hsl(178,42%,34%);
+--c-blue:hsl(215,42%,44%);
+--c-amber:hsl(35,52%,44%);
+--c-red:hsl(8,48%,46%);
+--c-teal-bg:hsl(178,42%,95%);
+--c-amber-bg:hsl(35,52%,94%);
+--c-red-bg:hsl(8,48%,95%);
+--ink:#2b3036;
+--ink-2:#5a626b;
+--ink-3:#8a929b;
+--line:#e3e6ea;
+--bg:#f6f7f8;
+--card:#fff;
+}
+body{font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;font-size:14px;line-height:1.7;color:var(--ink);background:var(--bg);min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--c-teal);text-decoration:none}
+button{cursor:pointer;font-family:inherit;font-size:13px}
+input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink)}
+h2{border-left:4px solid var(--c-teal);padding-left:10px;font-size:15px;font-weight:600;color:var(--ink);margin-bottom:12px}
+
+#app-header{background:var(--card);border-bottom:3px solid var(--c-teal);position:sticky;top:0;z-index:100}
+#header-inner{max-width:1180px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+#header-brand{flex:1;min-width:200px}
+#header-brand h1{font-size:18px;font-weight:700;color:var(--ink);line-height:1.2}
+#header-brand p{font-size:12px;color:var(--ink-2);margin-top:2px}
+#header-toolbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:4px;border:1px solid var(--line);background:var(--card);color:var(--ink-2);white-space:nowrap;transition:background 0.15s,color 0.15s,border-color 0.15s}
+.btn:hover{background:var(--bg);color:var(--ink);border-color:var(--ink-3)}
+.btn-primary{background:var(--c-teal);color:#fff;border-color:var(--c-teal)}
+.btn-primary:hover{background:hsl(178,42%,28%);border-color:hsl(178,42%,28%);color:#fff}
+.btn-danger{color:var(--c-red);border-color:var(--c-red)}
+.btn-danger:hover{background:var(--c-red-bg)}
+
+#main-nav{background:var(--card);border-bottom:1px solid var(--line)}
+#nav-inner{max-width:1180px;margin:0 auto;padding:0 20px;display:flex;gap:0}
+.nav-tab{padding:10px 20px;border:none;background:none;font-size:14px;color:var(--ink-2);border-bottom:3px solid transparent;margin-bottom:-1px;transition:color 0.15s,border-color 0.15s}
+.nav-tab:hover{color:var(--ink)}
+.nav-tab.active{color:var(--c-teal);border-bottom-color:var(--c-teal);font-weight:600}
+
+#main-content{flex:1;max-width:1180px;width:100%;margin:0 auto;padding:24px 20px}
+
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+#tab-diagram{display:none}
+#tab-diagram.active{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+
+#systems-editor{display:flex;flex-direction:column;gap:12px}
+#systems-list{display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 260px);overflow-y:auto;padding-right:4px}
+
+.system-card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px}
+.system-card-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.system-card-header input[type=text]{flex:1;border:1px solid var(--line);border-radius:4px;padding:4px 8px;background:var(--bg)}
+.system-card-header input[type=text]:focus{outline:none;border-color:var(--c-teal)}
+.btn-icon{width:26px;height:26px;border:1px solid var(--line);border-radius:4px;background:var(--card);color:var(--ink-3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;padding:0}
+.btn-icon:hover{background:var(--c-red-bg);color:var(--c-red);border-color:var(--c-red)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}
+.field-row.full{grid-template-columns:1fr}
+.field-label{font-size:12px;color:var(--ink-2);margin-bottom:2px}
+.field-row select,.field-row input[type=text]{width:100%;border:1px solid var(--line);border-radius:4px;padding:4px 8px;background:var(--bg)}
+.field-row select:focus,.field-row input[type=text]:focus{outline:none;border-color:var(--c-teal)}
+.dep-select{width:100%;border:1px solid var(--line);border-radius:4px;padding:4px 8px;background:var(--bg);min-height:60px}
+.dep-select:focus{outline:none;border-color:var(--c-teal)}
+
+#canvas-area{display:flex;flex-direction:column;gap:12px}
+#diagram-canvas{background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:auto;min-height:400px;position:relative}
+#diagram-canvas svg{display:block}
+#diagram-legend{display:flex;gap:16px;flex-wrap:wrap;padding:10px 14px;background:var(--card);border:1px solid var(--line);border-radius:6px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2)}
+.legend-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+
+.status-active{background:var(--c-teal);color:#fff}
+.status-transforming{background:var(--c-amber);color:#fff}
+.status-stalled{background:var(--c-red);color:#fff}
+.status-missing{background:var(--ink-3);color:#fff}
+.legend-dot.status-active{background:hsl(178,42%,34%)}
+.legend-dot.status-transforming{background:hsl(35,52%,44%)}
+.legend-dot.status-stalled{background:hsl(8,48%,46%)}
+.legend-dot.status-missing{background:hsl(0,0%,55%)}
+
+#tab-positioning{display:none}
+#tab-positioning.active{display:flex;flex-direction:column;gap:20px}
+
+.form-section{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:20px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-field{display:flex;flex-direction:column;gap:4px}
+.form-field.full{grid-column:1/-1}
+.form-field label{font-size:12px;font-weight:500;color:var(--ink-2)}
+.form-field input[type=text],.form-field select,.form-field textarea{border:1px solid var(--line);border-radius:4px;padding:6px 10px;background:var(--bg);color:var(--ink)}
+.form-field input[type=text]:focus,.form-field select:focus,.form-field textarea:focus{outline:none;border-color:var(--c-teal)}
+.form-field textarea{resize:vertical;min-height:72px}
+
+#authorities-table-editor{display:flex;flex-direction:column;gap:8px}
+#authorities-rows{display:flex;flex-direction:column;gap:6px}
+.authority-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 30px;gap:6px;align-items:center}
+.authority-row input{border:1px solid var(--line);border-radius:4px;padding:4px 8px;background:var(--bg);color:var(--ink);width:100%}
+.authority-row input:focus{outline:none;border-color:var(--c-teal)}
+.authority-row-header{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 30px;gap:6px}
+.authority-row-header span{font-size:11px;color:var(--ink-3);font-weight:500}
+
+#positioning-output{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:20px;display:none;flex-direction:column;gap:20px}
+#positioning-output.visible{display:flex}
+.output-section{display:flex;flex-direction:column;gap:8px}
+.output-section h3{font-size:13px;font-weight:600;color:var(--ink);border-bottom:1px solid var(--line);padding-bottom:6px}
+#narrative-block{position:relative}
+#narrative-text{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:12px;white-space:pre-wrap;line-height:1.8;color:var(--ink);font-size:13px;min-height:100px}
+#copy-narrative{position:absolute;top:8px;right:8px}
+.capability-table{width:100%;border-collapse:collapse;font-size:13px}
+.capability-table th{background:var(--c-teal-bg);color:var(--c-teal);padding:6px 10px;text-align:left;border:1px solid var(--line);font-weight:600}
+.capability-table td{padding:6px 10px;border:1px solid var(--line);vertical-align:top}
+.capability-table tr:nth-child(even) td{background:var(--bg)}
+.highlights-list{display:flex;flex-direction:column;gap:6px}
+.highlight-item{padding:6px 10px;background:var(--c-teal-bg);border-left:3px solid var(--c-teal);border-radius:0 4px 4px 0;font-size:13px;color:var(--ink)}
+
+#generate-btn-row{display:flex;justify-content:flex-start}
+
+#license-footer{max-width:1180px;margin:0 auto;width:100%;padding:10px 20px;font-size:11px;color:var(--ink-3);border-top:1px solid var(--line);margin-top:auto}
+
+#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:8px 16px;border-radius:4px;font-size:13px;opacity:0;transition:opacity 0.2s;pointer-events:none;z-index:9999}
+#toast.show{opacity:1}
+
+.empty-state{color:var(--ink-3);font-size:13px;text-align:center;padding:24px;background:var(--bg);border-radius:4px;border:1px dashed var(--line)}
+
+@media(max-width:780px){
+  #tab-diagram.active{grid-template-columns:1fr}
+  #systems-list{max-height:none}
+  .form-grid{grid-template-columns:1fr}
+  .authority-row{grid-template-columns:1fr 1fr;grid-template-rows:auto auto auto}
+}
+</style>
+</head>
+<body>
+
+<header id="app-header">
+  <div id="header-inner">
+    <div id="header-brand">
+      <h1>Architect Canvas</h1>
+      <p>架構師的系統地圖與定位提案工作台</p>
+    </div>
+    <div id="header-toolbar">
+      <button class="btn" id="btn-load-sample">範例公司</button>
+      <button class="btn btn-danger" id="btn-clear">清空成我的公司</button>
+      <button class="btn" id="btn-import">匯入 JSON</button>
+      <input type="file" id="import-file-input" accept=".json" style="display:none">
+      <button class="btn" id="btn-export">匯出 JSON</button>
+      <button class="btn" id="btn-export-png">匯出架構圖 PNG</button>
+      <button class="btn" id="btn-export-svg">匯出架構圖 SVG</button>
+    </div>
+  </div>
+</header>
+
+<nav id="main-nav">
+  <div id="nav-inner">
+    <button class="nav-tab active" data-tab="diagram">系統架構圖</button>
+    <button class="nav-tab" data-tab="positioning">軟體定位</button>
+  </div>
+</nav>
+
+<main id="main-content">
+  <div id="tab-diagram" class="tab-panel active">
+    <div id="systems-editor">
+      <h2>系統清單</h2>
+      <button class="btn btn-primary" id="btn-add-system">+ 新增系統</button>
+      <div id="systems-list"></div>
+    </div>
+    <div id="canvas-area">
+      <h2>架構圖</h2>
+      <div id="diagram-canvas"></div>
+      <div id="diagram-legend">
+        <div class="legend-item"><div class="legend-dot status-active"></div>現行 (Active)</div>
+        <div class="legend-item"><div class="legend-dot status-transforming"></div>轉型中 (Transforming)</div>
+        <div class="legend-item"><div class="legend-dot status-stalled"></div>停擺 (Stalled)</div>
+        <div class="legend-item"><div class="legend-dot status-missing"></div>缺位 (Missing)</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-positioning" class="tab-panel">
+    <div class="form-section">
+      <h2>定位問卷</h2>
+      <div class="form-grid">
+        <div class="form-field">
+          <label>組織名稱 (orgName)</label>
+          <input type="text" id="pos-orgName" placeholder="例：聯合數位服務有限公司">
+        </div>
+        <div class="form-field">
+          <label>主要目標 (primaryGoal)</label>
+          <select id="pos-primaryGoal">
+            <option value="">請選擇</option>
+            <option value="整合">整合</option>
+            <option value="現代化">現代化</option>
+            <option value="資安強化">資安強化</option>
+            <option value="規模化">規模化</option>
+            <option value="降本">降本</option>
+          </select>
+        </div>
+        <div class="form-field full">
+          <label>核心價值 (coreValue)</label>
+          <textarea id="pos-coreValue" placeholder="描述組織的核心業務價值與競爭優勢"></textarea>
+        </div>
+        <div class="form-field full">
+          <label>重複開發風險 (duplicationRisks)</label>
+          <textarea id="pos-duplicationRisks" placeholder="描述目前存在哪些重複建設或功能孤島的風險"></textarea>
+        </div>
+        <div class="form-field">
+          <label>提案對象 (audience)</label>
+          <select id="pos-audience">
+            <option value="">請選擇</option>
+            <option value="高階主管">高階主管</option>
+            <option value="技術團隊">技術團隊</option>
+            <option value="客戶">客戶</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <label style="font-size:12px;font-weight:500;color:var(--ink-2)">能力歸屬 (authorities)</label>
+          <button class="btn" id="btn-add-authority">+ 新增列</button>
+        </div>
+        <div id="authorities-table-editor">
+          <div class="authority-row-header">
+            <span>共用能力</span>
+            <span>權威來源</span>
+            <span>應取用系統</span>
+            <span>現況落差</span>
+            <span></span>
+          </div>
+          <div id="authorities-rows"></div>
+        </div>
+      </div>
+    </div>
+    <div id="generate-btn-row">
+      <button class="btn btn-primary" id="btn-generate" style="padding:8px 24px;font-size:14px">產生定位論述</button>
+    </div>
+    <div id="positioning-output">
+      <div class="output-section">
+        <h3>定位論述 (Narrative)</h3>
+        <div id="narrative-block">
+          <div id="narrative-text"></div>
+          <button class="btn" id="copy-narrative" style="font-size:12px;padding:3px 8px">複製</button>
+        </div>
+      </div>
+      <div class="output-section">
+        <h3>能力地圖表格 (Capability Table)</h3>
+        <div id="capability-table-container"></div>
+      </div>
+      <div class="output-section">
+        <h3>重點摘要 (Highlights)</h3>
+        <div id="highlights-container"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div id="license-footer">Licensed to {{LICENSEE}} — single seat</div>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+/* === ENGINE: layout (inlined) === */
+(function (root) {
+  var LAYER_ORDER = ["app", "system", "output", "infra"];
+
+  var DEFAULT_OPTIONS = {
+    width: 1180,
+    nodeWidth: 160,
+    nodeHeight: 64,
+    hGap: 24,
+    vGap: 16,
+    layerGap: 80,
+    padding: 40
+  };
+
+  function mergeOptions(options) {
+    var result = {};
+    for (var k in DEFAULT_OPTIONS) {
+      result[k] = DEFAULT_OPTIONS[k];
+    }
+    if (options) {
+      for (var k in options) {
+        if (options[k] !== undefined && options[k] !== null) {
+          result[k] = options[k];
+        }
+      }
+    }
+    return result;
+  }
+
+  function layoutSystems(systems, options) {
+    var opts = mergeOptions(options);
+
+    var idSet = {};
+    for (var i = 0; i < systems.length; i++) {
+      idSet[systems[i].id] = true;
+    }
+
+    var incomingCount = {};
+    for (var i = 0; i < systems.length; i++) {
+      incomingCount[systems[i].id] = 0;
+    }
+    for (var i = 0; i < systems.length; i++) {
+      var sys = systems[i];
+      if (sys.dependsOn) {
+        for (var j = 0; j < sys.dependsOn.length; j++) {
+          var dep = sys.dependsOn[j];
+          if (idSet[dep]) {
+            incomingCount[dep] = (incomingCount[dep] || 0) + 1;
+          }
+        }
+      }
+    }
+
+    var layerMap = {};
+    for (var i = 0; i < systems.length; i++) {
+      var sys = systems[i];
+      var layer = sys.layer;
+      if (!layerMap[layer]) layerMap[layer] = [];
+      layerMap[layer].push(sys);
+    }
+
+    for (var layer in layerMap) {
+      layerMap[layer].sort(function (a, b) {
+        var ca = incomingCount[a.id] || 0;
+        var cb = incomingCount[b.id] || 0;
+        if (cb !== ca) return cb - ca;
+        if (a.name < b.name) return -1;
+        if (a.name > b.name) return 1;
+        return 0;
+      });
+    }
+
+    function getOrderedLayers() {
+      var result = [];
+      for (var i = 0; i < LAYER_ORDER.length; i++) {
+        if (layerMap[LAYER_ORDER[i]] && layerMap[LAYER_ORDER[i]].length > 0) {
+          result.push(LAYER_ORDER[i]);
+        }
+      }
+      return result;
+    }
+
+    function arrangeLayerPositions(sortedItems) {
+      var n = sortedItems.length;
+      var positions = new Array(n);
+      if (n === 0) return positions;
+      var center = Math.floor(n / 2);
+      positions[center] = 0;
+      var left = center - 1;
+      var right = center + 1;
+      var offset = 1;
+      var turn = "right";
+      var idx = 1;
+      while (idx < n) {
+        if (turn === "right" && right < n) {
+          positions[right] = offset;
+          right++;
+          turn = "left";
+          offset++;
+          idx++;
+        } else if (turn === "left" && left >= 0) {
+          positions[left] = -offset;
+          left--;
+          turn = "right";
+          offset++;
+          idx++;
+        } else if (right < n) {
+          positions[right] = offset;
+          right++;
+          offset++;
+          idx++;
+        } else if (left >= 0) {
+          positions[left] = -offset;
+          left--;
+          offset++;
+          idx++;
+        } else {
+          break;
+        }
+      }
+      return positions;
+    }
+
+    var orderedLayers = getOrderedLayers();
+    var nodeMap = {};
+    var nodes = [];
+
+    var yPos = opts.padding;
+
+    for (var li = 0; li < orderedLayers.length; li++) {
+      var layer = orderedLayers[li];
+      var items = layerMap[layer];
+      var positions = arrangeLayerPositions(items);
+
+      var n = items.length;
+      var totalWidth = n * opts.nodeWidth + (n - 1) * opts.hGap;
+      var startX = opts.padding + (opts.width - 2 * opts.padding - totalWidth) / 2;
+
+      var minPos = 0;
+      var maxPos = 0;
+      for (var pi = 0; pi < positions.length; pi++) {
+        if (positions[pi] < minPos) minPos = positions[pi];
+        if (positions[pi] > maxPos) maxPos = positions[pi];
+      }
+
+      var centerIndex = 0;
+      for (var ii = 0; ii < positions.length; ii++) {
+        if (positions[ii] === 0) { centerIndex = ii; break; }
+      }
+
+      var centerX = startX + centerIndex * (opts.nodeWidth + opts.hGap);
+
+      for (var ii = 0; ii < items.length; ii++) {
+        var sys = items[ii];
+        var pos = positions[ii];
+        var xPos = centerX + pos * (opts.nodeWidth + opts.hGap);
+        var node = {
+          id: sys.id,
+          name: sys.name,
+          owner: sys.owner,
+          layer: sys.layer,
+          status: sys.status,
+          x: xPos,
+          y: yPos,
+          w: opts.nodeWidth,
+          h: opts.nodeHeight
+        };
+        nodes.push(node);
+        nodeMap[sys.id] = node;
+      }
+
+      yPos += opts.nodeHeight;
+      if (li < orderedLayers.length - 1) {
+        yPos += opts.layerGap;
+      }
+    }
+
+    var edges = [];
+    for (var i = 0; i < systems.length; i++) {
+      var sys = systems[i];
+      if (sys.dependsOn) {
+        for (var j = 0; j < sys.dependsOn.length; j++) {
+          var dep = sys.dependsOn[j];
+          if (idSet[dep]) {
+            edges.push({ from: sys.id, to: dep });
+          }
+        }
+      }
+    }
+
+    var maxX = 0;
+    var maxY = 0;
+    for (var i = 0; i < nodes.length; i++) {
+      var n = nodes[i];
+      if (n.x + n.w > maxX) maxX = n.x + n.w;
+      if (n.y + n.h > maxY) maxY = n.y + n.h;
+    }
+
+    var totalWidth = maxX + opts.padding;
+    var totalHeight = maxY + opts.padding;
+
+    return {
+      nodes: nodes,
+      edges: edges,
+      width: totalWidth,
+      height: totalHeight
+    };
+  }
+
+  function renderLayoutToSVG(layoutResult, options) {
+    var opts = mergeOptions(options);
+    var nodes = layoutResult.nodes;
+    var edges = layoutResult.edges;
+    var W = layoutResult.width;
+    var H = layoutResult.height;
+
+    var nodeMap = {};
+    for (var i = 0; i < nodes.length; i++) {
+      nodeMap[nodes[i].id] = nodes[i];
+    }
+
+    var statusStyle = {
+      active: {
+        fill: "#ffffff",
+        stroke: "#c9ced4",
+        strokeWidth: 1.5,
+        strokeDasharray: "none"
+      },
+      transforming: {
+        fill: "hsl(35,52%,94%)",
+        stroke: "hsl(35,52%,44%)",
+        strokeWidth: 2,
+        strokeDasharray: "6,3"
+      },
+      stalled: {
+        fill: "hsl(8,48%,95%)",
+        stroke: "hsl(8,48%,46%)",
+        strokeWidth: 2,
+        strokeDasharray: "6,3"
+      },
+      missing: {
+        fill: "#ffffff",
+        stroke: "hsl(8,48%,50%)",
+        strokeWidth: 2,
+        strokeDasharray: "2,4"
+      }
+    };
+
+    var parts = [];
+    parts.push('<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">');
+    parts.push('<style>text { font-family: "PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif; }</style>');
+
+    for (var i = 0; i < edges.length; i++) {
+      var edge = edges[i];
+      var fromNode = nodeMap[edge.from];
+      var toNode = nodeMap[edge.to];
+      if (!fromNode || !toNode) continue;
+
+      var x1 = fromNode.x + fromNode.w / 2;
+      var y1 = fromNode.y + fromNode.h / 2;
+      var x2 = toNode.x + toNode.w / 2;
+      var y2 = toNode.y + toNode.h / 2;
+
+      var dx = x2 - x1;
+      var dy = y2 - y1;
+      var len = Math.sqrt(dx * dx + dy * dy);
+
+      var hw = fromNode.w / 2;
+      var hh = fromNode.h / 2;
+      var tx = (len > 0) ? (dx / len) : 0;
+      var ty = (len > 0) ? (dy / len) : 0;
+
+      var sx1, sy1;
+      if (Math.abs(tx * hh) > Math.abs(ty * hw)) {
+        sx1 = fromNode.x + (tx > 0 ? fromNode.w : 0);
+        sy1 = fromNode.y + fromNode.h / 2;
+      } else {
+        sx1 = fromNode.x + fromNode.w / 2;
+        sy1 = fromNode.y + (ty > 0 ? fromNode.h : 0);
+      }
+
+      var hw2 = toNode.w / 2;
+      var hh2 = toNode.h / 2;
+      var sx2, sy2;
+      if (Math.abs(tx * hh2) > Math.abs(ty * hw2)) {
+        sx2 = toNode.x + (tx > 0 ? 0 : toNode.w);
+        sy2 = toNode.y + toNode.h / 2;
+      } else {
+        sx2 = toNode.x + toNode.w / 2;
+        sy2 = toNode.y + (ty > 0 ? 0 : toNode.h);
+      }
+
+      var mx = (sx1 + sx2) / 2;
+      parts.push('<path d="M ' + sx1 + ' ' + sy1 + ' C ' + mx + ' ' + sy1 + ' ' + mx + ' ' + sy2 + ' ' + sx2 + ' ' + sy2 + '" fill="none" stroke="hsl(178,42%,40%)" stroke-width="1.5" marker-end="url(#arrowhead)" opacity="0.7"/>');
+    }
+
+    parts.push('<defs>');
+    parts.push('<marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">');
+    parts.push('<polygon points="0 0, 8 3, 0 6" fill="hsl(178,42%,40%)" opacity="0.7"/>');
+    parts.push('</marker>');
+    parts.push('</defs>');
+
+    for (var i = 0; i < nodes.length; i++) {
+      var node = nodes[i];
+      var style = statusStyle[node.status] || statusStyle.active;
+      var dashAttr = style.strokeDasharray !== "none" ? ' stroke-dasharray="' + style.strokeDasharray + '"' : '';
+
+      parts.push('<g data-node="' + node.id + '">');
+      parts.push('<rect x="' + node.x + '" y="' + node.y + '" width="' + node.w + '" height="' + node.h + '" rx="8" ry="8" fill="' + style.fill + '" stroke="' + style.stroke + '" stroke-width="' + style.strokeWidth + '"' + dashAttr + '/>');
+
+      var nameY = node.owner ? node.y + node.h / 2 - 6 : node.y + node.h / 2 + 5;
+      parts.push('<text x="' + (node.x + node.w / 2) + '" y="' + nameY + '" text-anchor="middle" font-size="13" font-weight="bold" fill="#2b3036">' + escapeXml(node.name) + '</text>');
+
+      if (node.owner) {
+        parts.push('<text x="' + (node.x + node.w / 2) + '" y="' + (node.y + node.h / 2 + 12) + '" text-anchor="middle" font-size="11" fill="#8a929b">' + escapeXml(node.owner) + '</text>');
+      }
+
+      parts.push('</g>');
+    }
+
+    parts.push('</svg>');
+    return parts.join('\n');
+  }
+
+  function escapeXml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  }
+
+  root.ArchitectCanvasLayout = { layoutSystems: layoutSystems, renderLayoutToSVG: renderLayoutToSVG };
+  var layoutSystems_export = layoutSystems;
+  var renderLayoutToSVG_export = renderLayoutToSVG;
+
+  if (typeof window !== 'undefined') {
+    window.ArchitectCanvasLayout = root.ArchitectCanvasLayout;
+  }
+})(typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : this));
+
+/* === ENGINE: positioning (inlined) === */
+var ArchitectCanvasPositioning = (function () {
+
+  function countByStatus(systems) {
+    var active = 0, transitioning = 0, missing = 0, stalled = 0;
+    for (var i = 0; i < systems.length; i++) {
+      var s = systems[i].status;
+      if (s === 'active') active++;
+      else if (s === 'transitioning') transitioning++;
+      else if (s === 'missing') missing++;
+      else if (s === 'stalled') stalled++;
+    }
+    return { active: active, transitioning: transitioning, missing: missing, stalled: stalled, total: systems.length };
+  }
+
+  function resolveGap(authority, systems, userGap) {
+    var found = null;
+    for (var i = 0; i < systems.length; i++) {
+      if (
+        systems[i].name === authority ||
+        systems[i].id === authority ||
+        systems[i].owner === authority
+      ) {
+        found = systems[i];
+        break;
+      }
+    }
+    if (found && (found.status === 'missing')) {
+      return (userGap ? userGap + '；' : '') + '權威來源缺位，建議優先建立此能力';
+    }
+    if (found && (found.status === 'stalled')) {
+      return (userGap ? userGap + '；' : '') + '權威來源停擺，需盡速恢復或移交';
+    }
+    return userGap || '暫無已知缺口';
+  }
+
+  function goalPhrase(primaryGoal, audience) {
+    var phrases = {
+      integration: {
+        executive: '整合分散系統、消除資訊孤島，以提升決策效率與跨部門協作能力',
+        tech: '統一整合介面、降低跨系統耦合度，建立標準化資料與服務流通管道',
+        client: '提供一致的端對端服務能力，消除因系統割裂造成的服務斷點'
+      },
+      modernization: {
+        executive: '汰換老舊系統、降低技術債風險，為組織長期競爭力奠定現代化基礎',
+        tech: '推動系統現代化演進，以模組化架構取代單體遺留系統，降低維護成本',
+        client: '以現代化平台能力支撐持續創新，確保服務穩定性與可擴充性'
+      },
+      security: {
+        executive: '強化資安治理架構，降低合規風險與資料洩漏暴露面',
+        tech: '建立統一的身份驗證、授權與稽核鏈，收斂分散式資安管控缺口',
+        client: '以高規格資安架構保護客戶資料，滿足法規與信任要求'
+      },
+      scale: {
+        executive: '建構可規模化的系統基盤，支撐業務成長而不需線性增加人力與成本',
+        tech: '設計高可用、水平可擴展的服務架構，確保流量峰值下的系統韌性',
+        client: '以可靈活擴展的平台能力，支援客戶業務規模的持續成長'
+      },
+      cost: {
+        executive: '透過整合重複能力、消除冗餘建置，實現系統總擁有成本的實質降低',
+        tech: '識別並消除重複開發的功能模組，集中資源於差異化能力的建設',
+        client: '以精實的系統架構降低服務交付成本，將效益回饋至客戶端'
+      }
+    };
+    var goal = phrases[primaryGoal] || phrases['integration'];
+    return goal[audience] || goal['tech'];
+  }
+
+  function openingByAudience(audience, stats, orgName) {
+    var name = orgName || '本組織';
+    var base = name + ' 目前涵蓋共 ' + stats.total + ' 套系統，其中現行運作 ' + stats.active + ' 套、轉型進行中 ' + stats.transitioning + ' 套';
+    if (stats.missing > 0 || stats.stalled > 0) {
+      base += '、停擺或缺位 ' + (stats.missing + stats.stalled) + ' 套';
+    }
+    if (audience === 'executive') {
+      return base + '。從治理角度觀察，系統覆蓋度與能力完整性直接影響組織決策品質與風險暴露面。現有缺口若未妥善治理，將形成難以預期的技術負債與業務中斷風險。';
+    }
+    if (audience === 'client') {
+      return base + '。從服務交付能力的角度，系統成熟度分佈顯示現有能力已具備一定基礎，但部分關鍵能力尚在建置或已出現停擺，需優先補位以確保端對端服務品質。';
+    }
+    return base + '。從架構健康度角度，各層系統的成熟度分佈揭示了整體能力的完整性與可靠性現況，並指出最需優先處理的結構性缺口。';
+  }
+
+  function positioningCore(coreValue, primaryGoal, audience) {
+    var value = (coreValue || '提供穩定可靠的數位能力基礎').replace(/[。.\s]+$/, '');
+    var goal = goalPhrase(primaryGoal, audience);
+    if (audience === 'executive') {
+      return '本系統群的核心定位在於：' + value + '。為實現此定位，架構演進的主要方向為「' + goal + '」。這不僅是技術決策，更是組織戰略能力建設的體現——透過明確的能力邊界與歸屬原則，確保每一項投資都服務於核心價值的兌現，而非重複消耗在邊際效益遞減的冗餘建置上。';
+    }
+    if (audience === 'client') {
+      return '本系統群的定位主張是：' + value + '。在此核心主張下，我們以「' + goal + '」作為架構演進的主軸，確保所提供的平台能力能夠持續、穩定地支撐業務場景，並以透明的能力歸屬機制回應對服務可靠性與可預測性的要求。';
+    }
+    return '本系統群的架構定位主張為：' + value + '。為落實此定位，架構演進以「' + goal + '」為核心方向，並以能力歸屬原則作為治理基礎——確保每項能力都有明確的權威來源，避免在重複建置上耗費有限的工程資源。';
+  }
+
+  function governanceSection(duplicationRisks, authorities, audience) {
+    var risks = (duplicationRisks || '跨團隊重複建置相似功能，導致維護成本上升與資料不一致').replace(/[。.，,\s]+$/, '');
+    var authList = [];
+    for (var i = 0; i < authorities.length; i++) {
+      authList.push(authorities[i].capability);
+    }
+    var authText = authList.length > 0 ? authList.join('、') : '核心業務能力';
+
+    var prefix = '';
+    if (audience === 'executive') {
+      prefix = '在治理層面，' + risks + '，是導致資源耗散與系統複雜度持續攀升的關鍵因素。為此，本架構明確劃定以下能力的權威來源：' + authText + '。治理原則是：任何新系統立案前，須優先查閱能力歸屬原則表；凡已有權威來源的能力，一律透過介接取用，不得自行建置。此原則直接降低重複投資風險，並確保能力的演進由明確的負責方主導。';
+    } else if (audience === 'client') {
+      prefix = '為確保服務能力的一致性與可信賴度，' + risks + '，需透過明確的能力治理機制加以控制。本架構規範了以下能力的權威來源：' + authText + '。所有新增服務在建立前，必須先確認能力歸屬，有既有權威來源者一律介接，確保客戶所使用的每一項能力皆有單一、受管理的來源，消除因多頭並進造成的服務品質落差。';
+    } else {
+      prefix = '針對重複開發風險，' + risks + '，是本架構治理需直接處理的核心問題。架構治理明確要求：' + authText + ' 等能力設有權威來源，任何新系統立案前必須查閱能力歸屬原則表，已有權威來源者一律介接取用、不得自建。這項原則是降低系統碎片化、遏止技術債擴張最直接有效的手段。';
+    }
+    return prefix;
+  }
+
+  function closingSection(primaryGoal, audience, orgName) {
+    var name = orgName || '本組織';
+    if (audience === 'executive') {
+      return '展望後續，' + name + ' 應優先補強缺位能力、確立各系統的治理歸屬，並以本定位論述作為後續架構評審的基準。每一項新增或調整，均應對照核心定位主張，確保架構演進始終服務於組織的長期戰略目標，而非被短期需求推著走。';
+    }
+    if (audience === 'client') {
+      return '本定位論述代表了我們對系統能力建設的整體承諾。後續架構演進將以此為基準，持續強化能力完整性、消除服務缺口，確保所交付的平台能力能夠兌現對客戶的服務承諾，並在需求變化時保有足夠的靈活度與可擴展性。';
+    }
+    return '本定位論述作為架構決策的基準文件，後續所有系統立案、技術評審與資源配置，均應回歸本論述所界定的定位主張與治理原則進行對照。能力歸屬原則表需隨架構演進持續維護，確保其有效性與準確性，作為工程團隊日常決策的第一道參照。';
+  }
+
+  function buildHighlights(answers, stats, audience) {
+    var goal = goalPhrase(answers.primaryGoal, audience);
+    var bullets = [];
+
+    bullets.push('系統全景：共 ' + stats.total + ' 套，現行 ' + stats.active + ' 套、轉型中 ' + stats.transitioning + ' 套、缺位或停擺 ' + (stats.missing + stats.stalled) + ' 套');
+    bullets.push('核心定位：' + (answers.coreValue || '提供穩定可靠的數位能力基礎'));
+    bullets.push('架構主軸：' + goal);
+
+    if (answers.authorities && answers.authorities.length > 0) {
+      var caps = [];
+      for (var i = 0; i < answers.authorities.length; i++) {
+        caps.push(answers.authorities[i].capability);
+      }
+      bullets.push('權威來源能力：' + caps.join('、') + '——新系統立案前須先查歸屬表，有既有來源者不得自建');
+    }
+
+    if (answers.duplicationRisks) {
+      bullets.push('重複開發風險：' + answers.duplicationRisks.substring(0, 60) + (answers.duplicationRisks.length > 60 ? '…' : ''));
+    } else {
+      bullets.push('已識別重複開發風險，治理原則已明訂於能力歸屬原則表');
+    }
+
+    return bullets.slice(0, 5);
+  }
+
+  function generatePositioning(answers, systems) {
+    var safeAnswers = answers || {};
+    var safeSystems = systems || [];
+    var audience = safeAnswers.audience || 'tech';
+    var authorities = safeAnswers.authorities || [];
+
+    var stats = countByStatus(safeSystems);
+
+    var capabilityTable = [];
+    for (var i = 0; i < authorities.length; i++) {
+      var a = authorities[i];
+      capabilityTable.push({
+        capability: a.capability || '未命名能力',
+        authority: a.authority || '待定義',
+        consumers: a.consumers || '待定義',
+        gap: resolveGap(a.authority, safeSystems, a.gap)
+      });
+    }
+
+    var p1 = openingByAudience(audience, stats, safeAnswers.orgName);
+    var p2 = positioningCore(safeAnswers.coreValue, safeAnswers.primaryGoal, audience);
+    var p3 = governanceSection(safeAnswers.duplicationRisks, authorities, audience);
+    var p4 = closingSection(safeAnswers.primaryGoal, audience, safeAnswers.orgName);
+
+    var narrative = p1 + '\n\n' + p2 + '\n\n' + p3 + '\n\n' + p4;
+
+    var highlights = buildHighlights(safeAnswers, stats, audience);
+
+    return {
+      narrative: narrative,
+      capabilityTable: capabilityTable,
+      highlights: highlights
+    };
+  }
+
+  return { generatePositioning: generatePositioning };
+})();
+
+if(typeof window!=='undefined'){window.ArchitectCanvasPositioning=ArchitectCanvasPositioning;}
+
+/* === END ENGINES === */
+
+
+
+
+
+function escXML(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+var SAMPLE_STATE = {
+  systems: [
+    { id:'sys-1', name:'API 閘道', owner:'基礎架構組', layer:'system', status:'active', dependsOn:[] },
+    { id:'sys-2', name:'知識庫平台', owner:'產品研發組', layer:'app', status:'transforming', dependsOn:['sys-1'] },
+    { id:'sys-3', name:'報表引擎', owner:'數據分析組', layer:'output', status:'active', dependsOn:['sys-1','sys-4'] },
+    { id:'sys-4', name:'資料倉儲', owner:'基礎架構組', layer:'infra', status:'active', dependsOn:[] },
+    { id:'sys-5', name:'專案管理系統', owner:'PMO 辦公室', layer:'app', status:'stalled', dependsOn:['sys-1'] },
+    { id:'sys-6', name:'監控中心', owner:'維運組', layer:'infra', status:'active', dependsOn:['sys-4'] },
+    { id:'sys-7', name:'官網 CMS', owner:'行銷組', layer:'app', status:'active', dependsOn:['sys-1'] },
+    { id:'sys-8', name:'統一認證服務', owner:'資安組', layer:'system', status:'missing', dependsOn:[] }
+  ],
+  positioning: {
+    orgName: '聯合數位服務股份有限公司',
+    coreValue: '為中大型企業提供可靠的數位工作流程整合服務，以穩定性與安全性作為主要競爭優勢。',
+    primaryGoal: '整合',
+    duplicationRisks: '各前台系統各自實作登入驗證邏輯，安全標準不一；報表產製有兩條並行路徑導致數字口徑不一致。',
+    audience: '高階主管',
+    authorities: [
+      { capability:'身份驗證', authority:'統一認證服務', consumers:'API 閘道、知識庫平台、官網 CMS', gap:'統一認證服務尚未上線，各系統自建' },
+      { capability:'資料查詢出口', authority:'API 閘道', consumers:'所有前台系統', gap:'報表引擎直接讀取資料倉儲，未走閘道' },
+      { capability:'通知與推播', authority:'尚未指定', consumers:'專案管理系統、官網 CMS', gap:'無統一訊息中台，各自串接第三方' },
+      { capability:'監控告警', authority:'監控中心', consumers:'API 閘道、資料倉儲', gap:'知識庫平台、專案管理系統尚未接入' }
+    ]
+  }
+};
+
+var state = { systems: [], positioning: { orgName:'', coreValue:'', primaryGoal:'', duplicationRisks:'', audience:'', authorities:[] } };
+
+function loadState() {
+  try {
+    var raw = localStorage.getItem('architect-canvas-state');
+    if (raw) {
+      state = JSON.parse(raw);
+    } else {
+      state = JSON.parse(JSON.stringify(SAMPLE_STATE));
+    }
+  } catch(e) {}
+  if (!state.systems) state.systems = [];
+  if (!state.positioning) state.positioning = {};
+  if (!state.positioning.authorities) state.positioning.authorities = [];
+}
+
+function saveState() {
+  try { localStorage.setItem('architect-canvas-state', JSON.stringify(state)); } catch(e) {}
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2200);
+}
+
+function genId() {
+  return 'sys-' + Date.now() + '-' + Math.floor(Math.random()*10000);
+}
+
+function renderSystemsList() {
+  var list = document.getElementById('systems-list');
+  if (state.systems.length === 0) {
+    list.innerHTML = '<div class="empty-state">尚無系統，點擊「新增系統」開始建立</div>';
+    return;
+  }
+  list.innerHTML = '';
+  state.systems.forEach(function(sys) {
+    var card = document.createElement('div');
+    card.className = 'system-card';
+    card.dataset.id = sys.id;
+
+    var depOptions = state.systems.filter(function(s){ return s.id !== sys.id; }).map(function(s){
+      var sel = (sys.dependsOn && sys.dependsOn.indexOf(s.id) >= 0) ? ' selected' : '';
+      return '<option value="' + s.id + '"' + sel + '>' + escXML(s.name || '(未命名)') + '</option>';
+    }).join('');
+
+    card.innerHTML = '<div class="system-card-header">'
+      + '<input type="text" class="field-name" placeholder="系統名稱" value="' + escXML(sys.name||'') + '">'
+      + '<button class="btn-icon btn-delete-sys" title="刪除">x</button>'
+      + '</div>'
+      + '<div class="field-row"><div><div class="field-label">負責人</div><input type="text" class="field-owner" placeholder="負責人" value="' + escXML(sys.owner||'') + '"></div>'
+      + '<div><div class="field-label">所屬層級</div><select class="field-layer">'
+      + '<option value="app"' + (sys.layer==='app'?' selected':'') + '>應用層 (App)</option>'
+      + '<option value="system"' + (sys.layer==='system'?' selected':'') + '>系統層 (System)</option>'
+      + '<option value="output"' + (sys.layer==='output'?' selected':'') + '>輸出層 (Output)</option>'
+      + '<option value="infra"' + (sys.layer==='infra'?' selected':'') + '>基礎層 (Infra)</option>'
+      + '</select></div></div>'
+      + '<div class="field-row"><div><div class="field-label">狀態</div><select class="field-status">'
+      + '<option value="active"' + (sys.status==='active'?' selected':'') + '>現行 (Active)</option>'
+      + '<option value="transforming"' + (sys.status==='transforming'?' selected':'') + '>轉型中 (Transforming)</option>'
+      + '<option value="stalled"' + (sys.status==='stalled'?' selected':'') + '>停擺 (Stalled)</option>'
+      + '<option value="missing"' + (sys.status==='missing'?' selected':'') + '>缺位 (Missing)</option>'
+      + '</select></div>'
+      + '<div><div class="field-label">上下游依賴（多選）</div><select class="field-deps" multiple>'
+      + depOptions
+      + '</select></div></div>';
+
+    list.appendChild(card);
+
+    card.querySelector('.field-name').addEventListener('input', function(e){
+      sys.name = e.target.value;
+      saveState();
+      refreshDiagram();
+    });
+    card.querySelector('.field-owner').addEventListener('input', function(e){
+      sys.owner = e.target.value;
+      saveState();
+      refreshDiagram();
+    });
+    card.querySelector('.field-layer').addEventListener('change', function(e){
+      sys.layer = e.target.value;
+      saveState();
+      refreshDiagram();
+    });
+    card.querySelector('.field-status').addEventListener('change', function(e){
+      sys.status = e.target.value;
+      saveState();
+      refreshDiagram();
+    });
+    card.querySelector('.field-deps').addEventListener('change', function(e){
+      var sel = e.target.selectedOptions;
+      sys.dependsOn = Array.from(sel).map(function(o){ return o.value; });
+      saveState();
+      refreshDiagram();
+    });
+    card.querySelector('.btn-delete-sys').addEventListener('click', function(){
+      state.systems = state.systems.filter(function(s){ return s.id !== sys.id; });
+      state.systems.forEach(function(s){
+        if (s.dependsOn) s.dependsOn = s.dependsOn.filter(function(d){ return d !== sys.id; });
+      });
+      saveState();
+      renderSystemsList();
+      refreshDiagram();
+    });
+  });
+}
+
+var highlightedNodeId = null;
+
+function refreshDiagram() {
+  var canvas = document.getElementById('diagram-canvas');
+  if (state.systems.length === 0) {
+    canvas.innerHTML = '<div class="empty-state" style="margin:24px">尚無系統資料，請在左側新增系統</div>';
+    return;
+  }
+  var layout = window.ArchitectCanvasLayout.layoutSystems(state.systems, {});
+  var svgStr = window.ArchitectCanvasLayout.renderLayoutToSVG(layout, {});
+  canvas.innerHTML = svgStr;
+  bindDiagramEvents(canvas, layout);
+}
+
+function bindDiagramEvents(canvas, layout) {
+  var svg = canvas.querySelector('svg');
+  if (!svg) return;
+
+  var edgeMap = {};
+  layout.edges.forEach(function(e){
+    if (!edgeMap[e.from]) edgeMap[e.from] = [];
+    if (!edgeMap[e.to]) edgeMap[e.to] = [];
+    edgeMap[e.from].push(e.to);
+    edgeMap[e.to].push(e.from);
+  });
+
+  var nodes = svg.querySelectorAll('.node');
+  var edges = svg.querySelectorAll('.edge');
+
+  nodes.forEach(function(node) {
+    node.addEventListener('mouseenter', function() {
+      var nid = node.dataset.node;
+      var related = edgeMap[nid] || [];
+      edges.forEach(function(edge) {
+        var from = edge.dataset.from;
+        var to = edge.dataset.to;
+        if (from === nid || to === nid) {
+          edge.style.stroke = 'hsl(178,42%,34%)';
+          edge.style.opacity = '1';
+          edge.style.strokeWidth = '2';
+        } else {
+          edge.style.opacity = '0.15';
+        }
+      });
+      nodes.forEach(function(n) {
+        var nid2 = n.dataset.node;
+        if (nid2 !== nid && related.indexOf(nid2) < 0) {
+          n.style.opacity = '0.35';
+        }
+      });
+    });
+    node.addEventListener('mouseleave', function() {
+      edges.forEach(function(edge) {
+        edge.style.stroke = '';
+        edge.style.opacity = '0.7';
+        edge.style.strokeWidth = '1.5';
+      });
+      nodes.forEach(function(n) {
+        n.style.opacity = '1';
+      });
+    });
+  });
+}
+
+function renderPositioningForm() {
+  var p = state.positioning;
+  document.getElementById('pos-orgName').value = p.orgName || '';
+  document.getElementById('pos-coreValue').value = p.coreValue || '';
+  document.getElementById('pos-primaryGoal').value = p.primaryGoal || '';
+  document.getElementById('pos-duplicationRisks').value = p.duplicationRisks || '';
+  document.getElementById('pos-audience').value = p.audience || '';
+  renderAuthoritiesRows();
+}
+
+function renderAuthoritiesRows() {
+  var rows = document.getElementById('authorities-rows');
+  var authorities = state.positioning.authorities || [];
+  if (authorities.length === 0) {
+    rows.innerHTML = '<div class="empty-state" style="padding:10px">尚無資料，點擊「新增列」</div>';
+    return;
+  }
+  rows.innerHTML = '';
+  authorities.forEach(function(a, i) {
+    var row = document.createElement('div');
+    row.className = 'authority-row';
+    row.innerHTML = '<input type="text" class="a-capability" placeholder="共用能力" value="' + escXML(a.capability||'') + '">'
+      + '<input type="text" class="a-authority" placeholder="權威來源" value="' + escXML(a.authority||'') + '">'
+      + '<input type="text" class="a-consumers" placeholder="應取用系統" value="' + escXML(a.consumers||'') + '">'
+      + '<input type="text" class="a-gap" placeholder="現況落差" value="' + escXML(a.gap||'') + '">'
+      + '<button class="btn-icon btn-del-auth" style="flex-shrink:0" title="刪除">x</button>';
+    rows.appendChild(row);
+    row.querySelector('.a-capability').addEventListener('input', function(e){ a.capability = e.target.value; saveState(); });
+    row.querySelector('.a-authority').addEventListener('input', function(e){ a.authority = e.target.value; saveState(); });
+    row.querySelector('.a-consumers').addEventListener('input', function(e){ a.consumers = e.target.value; saveState(); });
+    row.querySelector('.a-gap').addEventListener('input', function(e){ a.gap = e.target.value; saveState(); });
+    row.querySelector('.btn-del-auth').addEventListener('click', function(){
+      state.positioning.authorities.splice(i, 1);
+      saveState();
+      renderAuthoritiesRows();
+    });
+  });
+}
+
+function bindPositioningFormEvents() {
+  ['pos-orgName','pos-coreValue','pos-primaryGoal','pos-duplicationRisks','pos-audience'].forEach(function(id) {
+    var key = id.replace('pos-','');
+    document.getElementById(id).addEventListener('input', function(e){
+      state.positioning[key] = e.target.value;
+      saveState();
+    });
+    document.getElementById(id).addEventListener('change', function(e){
+      state.positioning[key] = e.target.value;
+      saveState();
+    });
+  });
+
+  document.getElementById('btn-add-authority').addEventListener('click', function(){
+    if (!state.positioning.authorities) state.positioning.authorities = [];
+    state.positioning.authorities.push({ capability:'', authority:'', consumers:'', gap:'' });
+    saveState();
+    renderAuthoritiesRows();
+  });
+
+  document.getElementById('btn-generate').addEventListener('click', function(){
+    var result = window.ArchitectCanvasPositioning.generatePositioning(state.positioning, state.systems);
+    var output = document.getElementById('positioning-output');
+    output.classList.add('visible');
+
+    document.getElementById('narrative-text').textContent = result.narrative || '';
+
+    var tableContainer = document.getElementById('capability-table-container');
+    if (result.capabilityTable && result.capabilityTable.length > 0) {
+      var html = '<table class="capability-table"><thead><tr><th>共用能力</th><th>權威來源</th><th>應取用系統</th><th>現況落差</th></tr></thead><tbody>';
+      result.capabilityTable.forEach(function(row){
+        html += '<tr><td>' + escXML(row.capability||'') + '</td><td>' + escXML(row.authority||'') + '</td><td>' + escXML(row.consumers||'') + '</td><td>' + escXML(row.gap||'') + '</td></tr>';
+      });
+      html += '</tbody></table>';
+      tableContainer.innerHTML = html;
+    } else {
+      tableContainer.innerHTML = '<div class="empty-state">無能力表格資料</div>';
+    }
+
+    var hlContainer = document.getElementById('highlights-container');
+    if (result.highlights && result.highlights.length > 0) {
+      var hlHtml = '<div class="highlights-list">';
+      result.highlights.forEach(function(h){
+        hlHtml += '<div class="highlight-item">' + escXML(h) + '</div>';
+      });
+      hlHtml += '</div>';
+      hlContainer.innerHTML = hlHtml;
+    } else {
+      hlContainer.innerHTML = '<div class="empty-state">無重點摘要</div>';
+    }
+
+    output.scrollIntoView({ behavior:'smooth', block:'start' });
+  });
+
+  document.getElementById('copy-narrative').addEventListener('click', function(){
+    var text = document.getElementById('narrative-text').textContent;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function(){ showToast('已複製到剪貼簿'); });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('已複製到剪貼簿');
+    }
+  });
+}
+
+function downloadFile(filename, content, type) {
+  var blob = new Blob([content], { type: type });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function getSVGString() {
+  var svg = document.querySelector('#diagram-canvas svg');
+  if (!svg) return null;
+  return new XMLSerializer().serializeToString(svg);
+}
+
+function bindToolbarEvents() {
+  document.getElementById('btn-load-sample').addEventListener('click', function(){
+    state = JSON.parse(JSON.stringify(SAMPLE_STATE));
+    saveState();
+    renderSystemsList();
+    refreshDiagram();
+    renderPositioningForm();
+    showToast('已載入範例公司資料');
+  });
+
+  document.getElementById('btn-clear').addEventListener('click', function(){
+    if (!confirm('確定要清空所有資料並重設為空白狀態嗎？')) return;
+    state = { systems: [], positioning: { orgName:'', coreValue:'', primaryGoal:'', duplicationRisks:'', audience:'', authorities:[] } };
+    saveState();
+    renderSystemsList();
+    refreshDiagram();
+    renderPositioningForm();
+    document.getElementById('positioning-output').classList.remove('visible');
+    showToast('已清空，可開始輸入您的資料');
+  });
+
+  document.getElementById('btn-export').addEventListener('click', function(){
+    var json = JSON.stringify(state, null, 2);
+    downloadFile('architect-canvas-export.json', json, 'application/json');
+    showToast('已匯出 JSON');
+  });
+
+  document.getElementById('btn-import').addEventListener('click', function(){
+    document.getElementById('import-file-input').click();
+  });
+
+  document.getElementById('import-file-input').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      try {
+        var imported = JSON.parse(ev.target.result);
+        state = imported;
+        if (!state.systems) state.systems = [];
+        if (!state.positioning) state.positioning = {};
+        if (!state.positioning.authorities) state.positioning.authorities = [];
+        saveState();
+        renderSystemsList();
+        refreshDiagram();
+        renderPositioningForm();
+        document.getElementById('positioning-output').classList.remove('visible');
+        showToast('匯入成功');
+      } catch(err) {
+        alert('JSON 格式錯誤，無法匯入');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  document.getElementById('btn-export-svg').addEventListener('click', function(){
+    var svgStr = getSVGString();
+    if (!svgStr) { alert('目前無架構圖可匯出'); return; }
+    downloadFile('architect-canvas-diagram.svg', svgStr, 'image/svg+xml');
+    showToast('已匯出 SVG');
+  });
+
+  document.getElementById('btn-export-png').addEventListener('click', function(){
+    var svg = document.querySelector('#diagram-canvas svg');
+    if (!svg) { alert('目前無架構圖可匯出'); return; }
+    var svgStr = new XMLSerializer().serializeToString(svg);
+    var w = parseInt(svg.getAttribute('width')) || 800;
+    var h = parseInt(svg.getAttribute('height')) || 600;
+    var canvas = document.createElement('canvas');
+    canvas.width = w * 2;
+    canvas.height = h * 2;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(2, 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+    var img = new Image();
+    var blob = new Blob([svgStr], { type:'image/svg+xml' });
+    var url = URL.createObjectURL(blob);
+    img.onload = function(){
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(function(pngBlob){
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(pngBlob);
+        a.download = 'architect-canvas-diagram.png';
+        a.click();
+        showToast('已匯出 PNG');
+      }, 'image/png');
+    };
+    img.src = url;
+  });
+}
+
+function bindNavEvents() {
+  var tabs = document.querySelectorAll('.nav-tab');
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      tabs.forEach(function(t){ t.classList.remove('active'); });
+      tab.classList.add('active');
+      var target = tab.dataset.tab;
+      document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+      document.getElementById('tab-' + target).classList.add('active');
+      if (target === 'diagram') { refreshDiagram(); }
+    });
+  });
+}
+
+document.getElementById('btn-add-system').addEventListener('click', function(){
+  state.systems.push({ id: genId(), name:'', owner:'', layer:'app', status:'active', dependsOn:[] });
+  saveState();
+  renderSystemsList();
+  refreshDiagram();
+});
+
+loadState();
+bindNavEvents();
+bindToolbarEvents();
+bindPositioningFormEvents();
+renderSystemsList();
+refreshDiagram();
+renderPositioningForm();
+</script>
+</body>
+</html>
